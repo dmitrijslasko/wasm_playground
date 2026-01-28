@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>WASM Demo</title>
   <style>
     * {
@@ -14,17 +14,33 @@
       margin: 0;
       background: #111;
       height: 100vh;
+      width: 100vw;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
+      overflow: hidden;
+      overscroll-behavior: none;
+      touch-action: none;
+      position: fixed;
+      inset: 0;
+    }
+    html {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      overscroll-behavior: none;
+      touch-action: none;
     }
     canvas {
       /* upscale without blurring */
       image-rendering: pixelated;
       image-rendering: crisp-edges;
-      /* optional: make it bigger on screen */
-      width: 960px;
-      height: 600px;
+      display: block;
+      /* fill height and keep aspect ratio */
+      height: 100vh;
+      height: 100svh;
+      height: 100dvh;
+      width: auto;
     }
     .instructions {
       position: absolute;
