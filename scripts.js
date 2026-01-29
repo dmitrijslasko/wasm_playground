@@ -47,6 +47,34 @@ function loadSkyTexture(setSkyTexture) {
   };
 }
 
+function loadGroundTexture(setGroundTexture) {
+	const groundImg = new Image();
+	groundImg.src = "ground.png";
+	groundImg.onload = () => {
+	  const tmp = document.createElement("canvas");
+	  tmp.width = groundImg.width;
+	  tmp.height = groundImg.height;
+  
+	  const tctx = tmp.getContext("2d");
+	  tctx.drawImage(groundImg, 0, 0);
+  
+	  const imgData = tctx.getImageData(0, 0, groundImg.width, groundImg.height);
+	  const size = imgData.data.length;
+	  const ptr = Module._malloc(size);
+	  try {
+		const heap = Module.HEAPU8 || HEAPU8;
+		heap.set(imgData.data, ptr);
+		setGroundTexture(ptr, groundImg.width, groundImg.height);
+	  } catch (err) {
+		console.error("Failed to upload ground texture:", err);
+	  }
+	};
+	groundImg.onerror = () => {
+	  console.warn("Failed to load ground texture");
+	};
+  }
+  
+
 function start() {
   console.log("WASM ready");
   loadPlayerTexture();
@@ -80,7 +108,10 @@ function start() {
   const getPlayerY = Module.cwrap("get_player_y", "number", []);
   const getPlayerSize = Module.cwrap("get_player_size", "number", []);
   const setSkyTexture = Module.cwrap("set_sky_texture", null, ["number", "number", "number"]);
+  const setGroundTexture = Module.cwrap("set_ground_texture", null, ["number", "number", "number"]);
+
   loadSkyTexture(setSkyTexture);
+  loadGroundTexture(setGroundTexture);
 
 
   let last = performance.now();

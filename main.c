@@ -10,7 +10,7 @@
 #define PLAYER_POS_Y_STARTING_POSITION 420
 #define PLAYER_JUMP_HEIGHT 250
 
-#define GROUND_Y 400
+#define GROUND_Y 500
 
 
 #define OBSTACLE_BASE_SIZE 100
@@ -46,6 +46,10 @@ static uint8_t *sky_pixels = NULL;
 static int sky_w = 0;
 static int sky_h = 0;
 
+static uint8_t *ground_pixels = NULL;
+static int ground_w = 0;
+static int ground_h = 0;
+
 static int game_score = 0;
 
 EMSCRIPTEN_KEEPALIVE
@@ -54,6 +58,14 @@ void set_sky_texture(uint8_t *pixels, int w, int h)
     sky_pixels = pixels;
     sky_w = w;
     sky_h = h;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void set_ground_texture(uint8_t *pixels, int w, int h)
+{
+    ground_pixels = pixels;
+    ground_w = w;
+    ground_h = h;
 }
 
 static inline uint32_t pack_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
@@ -76,6 +88,33 @@ static void draw_sky(void)
             uint8_t g = sky_pixels[si + 1];
             uint8_t b = sky_pixels[si + 2];
             uint8_t a = sky_pixels[si + 3];
+            framebuffer[y * FRAMEBUFFER_WIDTH + x] = pack_rgba(r, g, b, a);
+        }
+    }
+}
+
+static void draw_ground(void)
+{
+    if (!ground_pixels || ground_w <= 0 || ground_h <= 0) {
+        for (int y = GROUND_Y; y < FRAMEBUFFER_HEIGHT; y++) {
+            for (int x = 0; x < FRAMEBUFFER_WIDTH; x++) {
+                framebuffer[y * FRAMEBUFFER_WIDTH + x] =
+                    pack_rgba(0, 255, 0, 255);
+            }
+        }
+        return;
+    }
+
+    const int ground_height = FRAMEBUFFER_HEIGHT - GROUND_Y;
+    for (int y = GROUND_Y; y < FRAMEBUFFER_HEIGHT; y++) {
+        int sy = ((y - GROUND_Y) * ground_h) / ground_height;
+        for (int x = 0; x < FRAMEBUFFER_WIDTH; x++) {
+            int sx = (x * ground_w) / FRAMEBUFFER_WIDTH;
+            int si = (sy * ground_w + sx) * 4;
+            uint8_t r = ground_pixels[si + 0];
+            uint8_t g = ground_pixels[si + 1];
+            uint8_t b = ground_pixels[si + 2];
+            uint8_t a = ground_pixels[si + 3];
             framebuffer[y * FRAMEBUFFER_WIDTH + x] = pack_rgba(r, g, b, a);
         }
     }
@@ -235,12 +274,7 @@ void game_step(float dt)
 
     draw_sky();
 
-    // draw ground
-    for (int y = GROUND_Y; y < FRAMEBUFFER_HEIGHT; y++) {
-            for (int x = 0; x < FRAMEBUFFER_WIDTH; x++) {
-                    framebuffer[y * FRAMEBUFFER_WIDTH + x] =  (uint32_t)(0 | (255 << 8) | (0 << 16) | (255 << 24));;
-                }
-            }
+    draw_ground();
        
     render_obstacle_course();
     render_player();
