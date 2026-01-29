@@ -8,7 +8,10 @@
 #define PLAYER_POS_X_STARTING_POSITION 400
 
 #define PLAYER_POS_Y_STARTING_POSITION 420
-#define PLAYER_JUMP_HEIGHT 250
+#define PLAYER_JUMP_HEIGHT 350
+#define GRAVITY 2000.0f
+#define JUMP_VELOCITY 1200.0f
+#define FAST_FALL_VELOCITY 0.0f
 
 #define GROUND_Y 500
 
@@ -16,7 +19,7 @@
 
 #define OBSTACLE_Y_BASE_POSITION 420
 #define OBSTACLE_COURSE_BASE_WIDTH 150
-#define OBSTACLE_COURSE_STARTING_X 1520
+#define OBSTACLE_COURSE_STARTING_X 1200
 #define OBSTACLE_COURSE_MOVEMENT_SPEED 2
 
 #define PLAYER_SIZE_STARTING 100
@@ -39,8 +42,9 @@ static int player_pos_y = PLAYER_POS_Y_STARTING_POSITION;
 
 static int player_active_jump = 0;
 static int player_active_jump_up = 0;
+static float player_vel_y = 0.0f;
 
-static char* obstacle_course = "10010100010100010001000100010010010000010010010101010101010100101010101010101010100010101010101010001";
+static char* obstacle_course = "10101001010001010001000100010010101001010100101001010000010010010010000010010010101010101010100101010101010101010100010101010101010001";
 static int obstacle_course_starting_x = OBSTACLE_COURSE_STARTING_X;
 
 static uint8_t *sky_pixels = NULL;
@@ -140,6 +144,7 @@ int reset_game(void)
     player_pos_y = PLAYER_POS_Y_STARTING_POSITION;
     player_active_jump = 0;
     player_active_jump_up = 0;
+    player_vel_y = 0.0f;
     obstacle_course_starting_x = OBSTACLE_COURSE_STARTING_X;
     game_over = 0;
     game_score = 0;
@@ -248,29 +253,24 @@ void    render_obstacle_course(void)
     }
 }
 
-void update_player_position(void)
+void update_player_position(float dt)
 {
-    if (player_active_jump)
-    {
-        if (player_active_jump_up)
-        {
-            player_pos_y -= 5;
-            if (player_pos_y < PLAYER_POS_Y_STARTING_POSITION - PLAYER_JUMP_HEIGHT)
-                player_active_jump_up = 0;
-        }
-        else
-        {
-            player_pos_y += 7;
-            if (player_pos_y >= PLAYER_POS_Y_STARTING_POSITION)
-            {
-                player_pos_y = PLAYER_POS_Y_STARTING_POSITION;
-                player_active_jump = 0;
-            }
-        }
+    if (dt <= 0.0f) {
+        return;
     }
-    else 
-    {
+
+    if (!player_active_jump) {
         player_pos_y = PLAYER_POS_Y_STARTING_POSITION;
+        player_vel_y = 0.0f;
+        return;
+    }
+
+    player_vel_y += GRAVITY * dt;
+    player_pos_y += (int)(player_vel_y * dt);
+    if (player_pos_y >= PLAYER_POS_Y_STARTING_POSITION) {
+        player_pos_y = PLAYER_POS_Y_STARTING_POSITION;
+        player_vel_y = 0.0f;
+        player_active_jump = 0;
     }
 }
 void update_score(void)
@@ -294,7 +294,9 @@ void game_step(float dt)
     update_score();
 
     obstacle_course_starting_x -= OBSTACLE_COURSE_MOVEMENT_SPEED;
-    (void)dt;
+    if (dt < 0.0f) {
+        dt = 0.0f;
+    }
 
     // if (!cleared) {
         for (int y = 0; y < FRAMEBUFFER_HEIGHT; y++) {
@@ -326,7 +328,7 @@ void game_step(float dt)
     draw_ground();
        
     render_obstacle_course();
-    update_player_position();
+    update_player_position(dt);
     update_collisions();
 }
 
@@ -367,16 +369,27 @@ void shrink_rect(void)
 EMSCRIPTEN_KEEPALIVE
 void player_up(void)
 {
-    if (player_active_jump)
+    if (game_over || player_active_jump)
         return;
     player_active_jump = 1;
     player_active_jump_up = 1;
+    player_vel_y = -JUMP_VELOCITY;
 }
 
 EMSCRIPTEN_KEEPALIVE
 void player_down(void)
 {
-    player_active_jump = 0;
+    if (game_over)
+        return;
+    if (!player_active_jump)
+        return;
+    if (player_active_jump_up)
+        return;
+    if (player_vel_y <= 0.0f)
+        return;
+    if (player_vel_y < FAST_FALL_VELOCITY) {
+        player_vel_y = FAST_FALL_VELOCITY;
+    }
 }
 
 
