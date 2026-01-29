@@ -5,7 +5,7 @@
 #define FRAMEBUFFER_WIDTH 960
 #define FRAMEBUFFER_HEIGHT 600
 
-#define PLAYER_POS_X_STARTING_POSITION 80
+#define PLAYER_POS_X_STARTING_POSITION 400
 
 #define PLAYER_POS_Y_STARTING_POSITION 420
 #define PLAYER_JUMP_HEIGHT 150
@@ -14,8 +14,8 @@
 #define OBSTACLE_BASE_SIZE 50
 #define OBSTACLE_Y_BASE_POSITION 420
 #define OBSTACLE_COURSE_BASE_WIDTH 150
-#define OBSTACLE_COURSE_STARTING_X 820;
-#define OBSTACLE_COURSE_MOVEMENT_SPEED 2;
+#define OBSTACLE_COURSE_STARTING_X 1520
+#define OBSTACLE_COURSE_MOVEMENT_SPEED 3
 
 
 static uint32_t framebuffer[FRAMEBUFFER_WIDTH * FRAMEBUFFER_HEIGHT];
@@ -87,6 +87,7 @@ void    render_obstacle_course(void)
     int obstacle_x_position = obstacle_course_starting_x;
     // process the obstacle course string and render the obstacles
     char *obstacle_course_ptr = obstacle_course;
+    
     while (*obstacle_course_ptr != '\0' && obstacle_x_position < FRAMEBUFFER_WIDTH)
     {
         if (*obstacle_course_ptr >= '1')
@@ -113,7 +114,7 @@ void render_player(void)
         }
         else
         {
-            player_pos_y += 2;
+            player_pos_y += 7;
             if (player_pos_y >= PLAYER_POS_Y_STARTING_POSITION)
             {
                 player_pos_y = PLAYER_POS_Y_STARTING_POSITION;

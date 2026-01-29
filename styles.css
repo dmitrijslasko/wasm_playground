@@ -1,7 +1,9 @@
 * {
   user-select: none;
-  -webkit-user-select: none;
-}
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none; */
+} 
 
 body {
   margin: 0;
@@ -17,6 +19,7 @@ body {
   position: fixed;
   inset: 0;
 }
+
 html {
   height: 100%;
   width: 100%;
@@ -24,6 +27,7 @@ html {
   overscroll-behavior: none;
   touch-action: none;
 }
+
 canvas {
   /* upscale without blurring */
   image-rendering: pixelated;
@@ -34,7 +38,9 @@ canvas {
   height: 100svh;
   height: 100dvh;
   width: auto;
+
 }
+
 .instructions {
   position: absolute;
   top: 12px;
@@ -45,6 +51,7 @@ canvas {
   padding: 6px 8px;
   border-radius: 6px;
 }
+
 .joystick {
   position: absolute;
   bottom: 48px;
@@ -54,6 +61,7 @@ canvas {
   border-radius: 50%;
   background: rgba(34, 34, 34, 0.6);
   border: 10px solid rgba(255, 255, 255, 0.2);
+
   user-select: none;
   touch-action: manipulation;
   -webkit-touch-callout: none;
@@ -70,13 +78,14 @@ canvas {
   border-radius: 50%;
   background: rgba(60, 60, 60, 0.9);
   border: 2px solid rgba(255, 255, 255, 0.2);
+  transform: translate(0, 0);
+
   user-select: none;
   touch-action: manipulation;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
-  -webkit-user-select: none;
-  transform: translate(0, 0);
 }
+
 .actions {
   position: absolute;
   bottom: 48px;
@@ -84,6 +93,7 @@ canvas {
   display: grid;
   grid-template-columns: 56px 56px;
   gap: 8px;
+
   user-select: none;
   touch-action: manipulation;
   -webkit-touch-callout: none;
@@ -97,10 +107,13 @@ canvas {
   background: rgba(34, 34, 34, 0.9);
   color: #eee;
   font: 24px/1 system-ui, sans-serif;
-  touch-action: none;
+
+  user-select: none;
+  touch-action: manipulation;
   user-select: none;
   -webkit-user-select: none;
 }
+
 .rotate-overlay {
   position: fixed;
   inset: 0;
