@@ -50,6 +50,10 @@ static uint8_t *ground_pixels = NULL;
 static int ground_w = 0;
 static int ground_h = 0;
 
+static uint8_t *obstacle_pixels = NULL;
+static int obstacle_w = 0;
+static int obstacle_h = 0;
+
 static int game_score = 0;
 
 EMSCRIPTEN_KEEPALIVE
@@ -66,6 +70,14 @@ void set_ground_texture(uint8_t *pixels, int w, int h)
     ground_pixels = pixels;
     ground_w = w;
     ground_h = h;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void set_obstacle_texture(uint8_t *pixels, int w, int h)
+{
+    obstacle_pixels = pixels;
+    obstacle_w = w;
+    obstacle_h = h;
 }
 
 static inline uint32_t pack_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
@@ -173,13 +185,41 @@ void update_collision(void) {
 
 void    render_obstacle(int x_position, int y_position)
 {
-    for (int y = y_position; y < y_position + OBSTACLE_BASE_SIZE; y++) 
-    {
-        for (int x = x_position; x < x_position + OBSTACLE_BASE_SIZE; x++)
-        {
-            if (x < 0) 
+    const int size = OBSTACLE_BASE_SIZE;
+    if (obstacle_pixels && obstacle_w > 0 && obstacle_h > 0) {
+        for (int y = 0; y < size; y++) {
+            int py = y_position + y;
+            if (py < 0 || py >= FRAMEBUFFER_HEIGHT) {
                 continue;
-            framebuffer[y * FRAMEBUFFER_WIDTH + x] = (uint32_t)(255 | (0 << 8) | (0 << 16) | (255 << 24));
+            }
+            int sy = (y * obstacle_h) / size;
+            for (int x = 0; x < size; x++) {
+                int px = x_position + x;
+                if (px < 0 || px >= FRAMEBUFFER_WIDTH) {
+                    continue;
+                }
+                int sx = (x * obstacle_w) / size;
+                int si = (sy * obstacle_w + sx) * 4;
+                uint8_t r = obstacle_pixels[si + 0];
+                uint8_t g = obstacle_pixels[si + 1];
+                uint8_t b = obstacle_pixels[si + 2];
+                uint8_t a = obstacle_pixels[si + 3];
+                framebuffer[py * FRAMEBUFFER_WIDTH + px] = pack_rgba(r, g, b, a);
+            }
+        }
+        return;
+    }
+
+    for (int y = y_position; y < y_position + size; y++) {
+        if (y < 0 || y >= FRAMEBUFFER_HEIGHT) {
+            continue;
+        }
+        for (int x = x_position; x < x_position + size; x++) {
+            if (x < 0 || x >= FRAMEBUFFER_WIDTH) {
+                continue;
+            }
+            framebuffer[y * FRAMEBUFFER_WIDTH + x] =
+                pack_rgba(255, 0, 0, 255);
         }
     }
 }
