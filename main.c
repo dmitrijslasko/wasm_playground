@@ -235,6 +235,8 @@ void shrink_rect(void)
 EMSCRIPTEN_KEEPALIVE
 void player_up(void)
 {
+    if (player_active_jump)
+        return;
     player_active_jump = 1;
     player_active_jump_up = 1;
 }
