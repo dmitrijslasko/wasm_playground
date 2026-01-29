@@ -173,7 +173,7 @@ canvas {
   font-weight: 400;
   font-family: 'Press Start 2P', system-ui, sans-serif;
   padding: 15px;
-  border-radius: 5px;
+  border-radius: 0px;
   border: none;
   cursor: pointer;
 }
