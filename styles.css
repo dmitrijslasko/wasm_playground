@@ -58,7 +58,6 @@ canvas {
   touch-action: manipulation;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
-  -webkit-user-select: none;
 }
 .joystick .stick {
   position: absolute;
