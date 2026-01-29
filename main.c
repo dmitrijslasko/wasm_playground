@@ -19,6 +19,8 @@
 #define OBSTACLE_COURSE_STARTING_X 1520
 #define OBSTACLE_COURSE_MOVEMENT_SPEED 3
 
+#define PLAYER_SIZE_STARTING 100
+
 
 static uint32_t framebuffer[FRAMEBUFFER_WIDTH * FRAMEBUFFER_HEIGHT];
 
@@ -29,7 +31,7 @@ static uint8_t current_g = 0;
 static uint8_t current_b = 255;
 static uint8_t current_a = 255;
 
-static int player_size = 100;
+static int player_size = PLAYER_SIZE_STARTING;
 static int player_size_step = 1;
 
 static int player_pos_x = PLAYER_POS_X_STARTING_POSITION;
@@ -162,7 +164,7 @@ int aabb_overlap(int ax, int ay, int aw, int ah, int bx, int by, int bw, int bh)
            ay < by + bh && ay + ah > by;
 }
 
-void update_collision(void) {
+void update_collisions(void) {
     int ox = obstacle_course_starting_x;
     char *p = obstacle_course;
 
@@ -172,9 +174,7 @@ void update_collision(void) {
                              ox, OBSTACLE_Y_BASE_POSITION,
                              OBSTACLE_BASE_SIZE, OBSTACLE_BASE_SIZE)) {
                 game_over = 1;
-            }
-            if (player_pos_x > ox + OBSTACLE_BASE_SIZE)
-                game_score++;
+                }
             }
         ox += OBSTACLE_COURSE_BASE_WIDTH;
         p++;
@@ -242,7 +242,7 @@ void    render_obstacle_course(void)
     }
 }
 
-void render_player(void)
+void update_player_position(void)
 {
     if (player_active_jump)
     {
@@ -267,14 +267,16 @@ void render_player(void)
         player_pos_y = PLAYER_POS_Y_STARTING_POSITION;
     }
 }
-
+void update_score(void)
+{
+    if (obstacle_course_starting_x + OBSTACLE_BASE_SIZE < player_pos_x)
+        game_score += 1;
+}
 
 EMSCRIPTEN_KEEPALIVE
 void game_step(float dt)
 {
     static int once = 0;
-    // static int cleared = 0;
-
     if (!once) {
         once = 1;
         puts("HELLO FROM C");
@@ -282,6 +284,8 @@ void game_step(float dt)
     
     if (game_over)
         return ;
+
+    update_score();
 
     obstacle_course_starting_x -= OBSTACLE_COURSE_MOVEMENT_SPEED;
     (void)dt;
@@ -316,8 +320,8 @@ void game_step(float dt)
     draw_ground();
        
     render_obstacle_course();
-    render_player();
-    update_collision();
+    update_player_position();
+    update_collisions();
 }
 
 EMSCRIPTEN_KEEPALIVE
