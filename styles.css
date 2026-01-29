@@ -59,11 +59,31 @@ canvas {
   left: 50%;
   transform: translateX(-50%);
   color: #fff;
-  font: 40px system-ui, sans-serif;
-  padding: 6px 10px;
+  font-size: 7vh;
+  /* font-weight: 400; */
+  font-family: 'Press Start 2P', system-ui, sans-serif;
+  padding: 10px 10px;
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.0);
   pointer-events: none;
+}
+
+#game-over-screen {
+  width: 100vw;
+  text-align: center;
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translateY(-50%);
+  transform: translateX(-50%);
+  color: #fff;
+  font-size: 14vh;
+  /* font-weight: 700; */
+  font-family: 'Press Start 2P', system-ui, sans-serif;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.0);
+  pointer-events: none;
+  display: none;
 }
 
 .instructions {
@@ -145,13 +165,14 @@ canvas {
   position: absolute;
   top: 36px;
   right: 60px;
-  width: 120px;
+  width: auto;
   text-align: center;
   background-color: darkslateblue;
   color: white;
-  font-size: 24px;
-  font-weight: bold;
-  padding: 10px;
+  font-size: 4vh;
+  font-weight: 400;
+  font-family: 'Press Start 2P', system-ui, sans-serif;
+  padding: 15px;
   border-radius: 5px;
   border: none;
   cursor: pointer;
@@ -183,6 +204,7 @@ canvas {
   .instructions,
   canvas,
   #scoreboard,
+  #game-over-screen,
   .joystick,
   .actions {
 	display: none;

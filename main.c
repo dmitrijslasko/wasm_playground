@@ -17,10 +17,10 @@
 #define OBSTACLE_Y_BASE_POSITION 420
 #define OBSTACLE_COURSE_BASE_WIDTH 150
 #define OBSTACLE_COURSE_STARTING_X 1520
-#define OBSTACLE_COURSE_MOVEMENT_SPEED 3
+#define OBSTACLE_COURSE_MOVEMENT_SPEED 2
 
 #define PLAYER_SIZE_STARTING 100
-
+#define PLAYER_MOVEMENT_SPEED 3
 
 static uint32_t framebuffer[FRAMEBUFFER_WIDTH * FRAMEBUFFER_HEIGHT];
 
@@ -150,6 +150,12 @@ EMSCRIPTEN_KEEPALIVE
 int get_game_score(void)
 {
     return game_score;
+}
+
+EMSCRIPTEN_KEEPALIVE
+int get_game_over(void)
+{
+    return game_over;
 }
 
 int    check_collision(int obstacle_x_pos, int obstacle_y_pos)
