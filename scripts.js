@@ -10,7 +10,7 @@ let playerTextureReady = false;
 
 function loadPlayerTexture() {
   const img = new Image();
-  img.src = "player.png";
+  img.src = "assets/player.png";
   img.onload = () => {
 	playerTexture = img;
 	playerTextureReady = true;
@@ -22,7 +22,7 @@ function loadPlayerTexture() {
 
 function loadSkyTexture(setSkyTexture) {
   const skyImg = new Image();
-  skyImg.src = "pixel-sky.jpg";
+  skyImg.src = "assets/pixel-sky.jpg";
   skyImg.onload = () => {
 	const tmp = document.createElement("canvas");
 	tmp.width = skyImg.width;
@@ -49,7 +49,7 @@ function loadSkyTexture(setSkyTexture) {
 
 function loadGroundTexture(setGroundTexture) {
 	const groundImg = new Image();
-	groundImg.src = "ground.png";
+	groundImg.src = "assets/ground.png";
 	groundImg.onload = () => {
 	  const tmp = document.createElement("canvas");
 	  tmp.width = groundImg.width;
@@ -76,7 +76,7 @@ function loadGroundTexture(setGroundTexture) {
 
 function loadObstacleTexture(setObstacleTexture) {
   const obstacleImg = new Image();
-  obstacleImg.src = "obstacle.png";
+  obstacleImg.src = "assets/obstacle.png";
   obstacleImg.onload = () => {
 	const tmp = document.createElement("canvas");
 	tmp.width = obstacleImg.width;
