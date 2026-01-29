@@ -8,10 +8,13 @@
 #define PLAYER_POS_X_STARTING_POSITION 400
 
 #define PLAYER_POS_Y_STARTING_POSITION 420
-#define PLAYER_JUMP_HEIGHT 150
+#define PLAYER_JUMP_HEIGHT 250
+
+#define GROUND_Y 400
 
 
-#define OBSTACLE_BASE_SIZE 50
+#define OBSTACLE_BASE_SIZE 100
+
 #define OBSTACLE_Y_BASE_POSITION 420
 #define OBSTACLE_COURSE_BASE_WIDTH 150
 #define OBSTACLE_COURSE_STARTING_X 1520
@@ -27,7 +30,7 @@ static uint8_t current_g = 0;
 static uint8_t current_b = 255;
 static uint8_t current_a = 255;
 
-static int player_size = 50;
+static int player_size = 100;
 static int player_size_step = 1;
 
 static int player_pos_x = PLAYER_POS_X_STARTING_POSITION;
@@ -39,6 +42,45 @@ static int player_active_jump_up = 0;
 static char* obstacle_course = "10010100010100010001000100010010010000010010010101010101010100101010101010101010100010101010101010001";
 static int obstacle_course_starting_x = OBSTACLE_COURSE_STARTING_X;
 
+static uint8_t *sky_pixels = NULL;
+static int sky_w = 0;
+static int sky_h = 0;
+
+static int game_score = 0;
+
+EMSCRIPTEN_KEEPALIVE
+void set_sky_texture(uint8_t *pixels, int w, int h)
+{
+    sky_pixels = pixels;
+    sky_w = w;
+    sky_h = h;
+}
+
+static inline uint32_t pack_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+{
+    return (uint32_t)(r | (g << 8) | (b << 16) | (a << 24));
+}
+
+static void draw_sky(void)
+{
+    if (!sky_pixels || sky_w <= 0 || sky_h <= 0) {
+        return;
+    }
+
+    for (int y = 0; y < GROUND_Y; y++) {
+        int sy = (y * sky_h) / GROUND_Y;
+        for (int x = 0; x < FRAMEBUFFER_WIDTH; x++) {
+            int sx = (x * sky_w) / FRAMEBUFFER_WIDTH;
+            int si = (sy * sky_w + sx) * 4;
+            uint8_t r = sky_pixels[si + 0];
+            uint8_t g = sky_pixels[si + 1];
+            uint8_t b = sky_pixels[si + 2];
+            uint8_t a = sky_pixels[si + 3];
+            framebuffer[y * FRAMEBUFFER_WIDTH + x] = pack_rgba(r, g, b, a);
+        }
+    }
+}
+
 EMSCRIPTEN_KEEPALIVE
 int reset_game(void)
 {
@@ -48,7 +90,14 @@ int reset_game(void)
     player_active_jump_up = 0;
     obstacle_course_starting_x = OBSTACLE_COURSE_STARTING_X;
     game_over = 0;
+    game_score = 0;
     return 0;
+}
+
+EMSCRIPTEN_KEEPALIVE
+int get_game_score(void)
+{
+    return game_score;
 }
 
 int    check_collision(int obstacle_x_pos, int obstacle_y_pos)
@@ -74,7 +123,9 @@ void update_collision(void) {
                              OBSTACLE_BASE_SIZE, OBSTACLE_BASE_SIZE)) {
                 game_over = 1;
             }
-        }
+            if (player_pos_x > ox + OBSTACLE_BASE_SIZE)
+                game_score++;
+            }
         ox += OBSTACLE_COURSE_BASE_WIDTH;
         p++;
     }
@@ -137,12 +188,6 @@ void render_player(void)
     {
         player_pos_y = PLAYER_POS_Y_STARTING_POSITION;
     }
-
-    for (int y = player_pos_y; y < player_pos_y + player_size; y++) {
-        for (int x = player_pos_x; x < player_pos_x + player_size; x++) {
-            framebuffer[y * FRAMEBUFFER_WIDTH + x] =  (uint32_t)(0 | (0 << 8) | (0 << 16) | (255 << 24));;
-        }
-    }
 }
 
 
@@ -188,18 +233,10 @@ void game_step(float dt)
     uint32_t color =
         (uint32_t)(current_r | (current_g << 8) | (current_b << 16) | (current_a << 24));
 
-
-
-
-    // draw sky 
-    for (int y = 0; y < FRAMEBUFFER_HEIGHT; y++) {
-        for (int x = 0; x < FRAMEBUFFER_WIDTH; x++) {
-                framebuffer[y * FRAMEBUFFER_WIDTH + x] =  (uint32_t)(0 | (0 << 8) | (255 << 16) | (255 << 24));
-            }
-        }
+    draw_sky();
 
     // draw ground
-    for (int y = 400; y < FRAMEBUFFER_HEIGHT; y++) {
+    for (int y = GROUND_Y; y < FRAMEBUFFER_HEIGHT; y++) {
             for (int x = 0; x < FRAMEBUFFER_WIDTH; x++) {
                     framebuffer[y * FRAMEBUFFER_WIDTH + x] =  (uint32_t)(0 | (255 << 8) | (0 << 16) | (255 << 24));;
                 }
@@ -263,6 +300,9 @@ void player_down(void)
 EMSCRIPTEN_KEEPALIVE
 void move_rect(int dx, int dy)
 {
+    if (game_over)
+        return;
+        
     player_pos_x += dx;
     player_pos_y += dy;
 
@@ -276,4 +316,22 @@ void move_rect(int dx, int dy)
     if (player_pos_y < 0) player_pos_y = 0;
     if (player_pos_x + size > FRAMEBUFFER_WIDTH) player_pos_x = FRAMEBUFFER_WIDTH - size;
     if (player_pos_y + size > FRAMEBUFFER_HEIGHT) player_pos_y = FRAMEBUFFER_HEIGHT - size;
+}
+
+EMSCRIPTEN_KEEPALIVE
+int get_player_x(void)
+{
+    return player_pos_x;
+}
+
+EMSCRIPTEN_KEEPALIVE
+int get_player_y(void)
+{
+    return player_pos_y;
+}
+
+EMSCRIPTEN_KEEPALIVE
+int get_player_size(void)
+{
+    return player_size;
 }

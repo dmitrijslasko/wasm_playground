@@ -5,11 +5,55 @@ var Module = {
   }
 };
 
+let playerTexture = null;
+let playerTextureReady = false;
+
+function loadPlayerTexture() {
+  const img = new Image();
+  img.src = "texture.png";
+  img.onload = () => {
+	playerTexture = img;
+	playerTextureReady = true;
+  };
+  img.onerror = () => {
+	playerTextureReady = false;
+  };
+}
+
+function loadSkyTexture(setSkyTexture) {
+  const skyImg = new Image();
+  skyImg.src = "pixel-sky.jpg";
+  skyImg.onload = () => {
+	const tmp = document.createElement("canvas");
+	tmp.width = skyImg.width;
+	tmp.height = skyImg.height;
+
+	const tctx = tmp.getContext("2d");
+	tctx.drawImage(skyImg, 0, 0);
+
+	const imgData = tctx.getImageData(0, 0, skyImg.width, skyImg.height);
+	const size = imgData.data.length;
+	const ptr = Module._malloc(size);
+	try {
+	  const heap = Module.HEAPU8 || HEAPU8;
+	  heap.set(imgData.data, ptr);
+	  setSkyTexture(ptr, skyImg.width, skyImg.height);
+	} catch (err) {
+	  console.error("Failed to upload sky texture:", err);
+	}
+  };
+  skyImg.onerror = () => {
+	console.warn("Failed to load pixel-sky.jpg");
+  };
+}
+
 function start() {
   console.log("WASM ready");
+  loadPlayerTexture();
 
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d", { alpha: false });
+  const scoreEl = document.getElementById("score");
 
   // MUST match canvas width/height
   const W = canvas.width;
@@ -31,9 +75,16 @@ function start() {
   const playerIsDown = Module.cwrap("player_down", null, []);
 
   const resetGame = Module.cwrap("reset_game", null, []);
+  const getGameScore = Module.cwrap("get_game_score", "number", []);
+  const getPlayerX = Module.cwrap("get_player_x", "number", []);
+  const getPlayerY = Module.cwrap("get_player_y", "number", []);
+  const getPlayerSize = Module.cwrap("get_player_size", "number", []);
+  const setSkyTexture = Module.cwrap("set_sky_texture", null, ["number", "number", "number"]);
+  loadSkyTexture(setSkyTexture);
 
 
   let last = performance.now();
+  let lastScore = null;
 
   // keys that are pressed right now
   const keys = new Set();
@@ -74,6 +125,20 @@ function start() {
 
 	img.data.set(pixels);
 	ctx.putImageData(img, 0, 0);
+	if (playerTextureReady) {
+	  const px = getPlayerX();
+	  const py = getPlayerY();
+	  const ps = getPlayerSize();
+	  ctx.imageSmoothingEnabled = false;
+	  ctx.drawImage(playerTexture, px, py, ps, ps);
+	}
+	if (scoreEl) {
+	  const score = getGameScore();
+	  if (score !== lastScore) {
+		scoreEl.textContent = String(score);
+		lastScore = score;
+	  }
+	}
 
 	requestAnimationFrame(loop);
   }

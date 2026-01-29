@@ -7,7 +7,7 @@
 
 body {
   margin: 0;
-  background: grey;
+  background: black;
   height: 100vh;
   width: 100vw;
   display: flex;
@@ -39,6 +39,19 @@ canvas {
   height: 100dvh;
   width: auto;
 
+}
+
+#scoreboard {
+  position: absolute;
+  top: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #fff;
+  font: 40px system-ui, sans-serif;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  pointer-events: none;
 }
 
 .instructions {
@@ -150,8 +163,10 @@ canvas {
   .rotate-overlay {
 	display: flex;
   }
+
   .instructions,
   canvas,
+  #scoreboard,
   .joystick,
   .actions {
 	display: none;
