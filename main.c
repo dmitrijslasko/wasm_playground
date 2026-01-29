@@ -39,6 +39,17 @@ static int player_active_jump_up = 0;
 static char* obstacle_course = "10010100010100010001000100010010010000010010010101010101010100101010101010101010100010101010101010001";
 static int obstacle_course_starting_x = OBSTACLE_COURSE_STARTING_X;
 
+EMSCRIPTEN_KEEPALIVE
+int reset_game(void)
+{
+    player_pos_x = PLAYER_POS_X_STARTING_POSITION;
+    player_pos_y = PLAYER_POS_Y_STARTING_POSITION;
+    player_active_jump = 0;
+    player_active_jump_up = 0;
+    obstacle_course_starting_x = OBSTACLE_COURSE_STARTING_X;
+    game_over = 0;
+    return 0;
+}
 
 int    check_collision(int obstacle_x_pos, int obstacle_y_pos)
 {

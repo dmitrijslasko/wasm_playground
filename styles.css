@@ -63,10 +63,11 @@ canvas {
   border: 10px solid rgba(255, 255, 255, 0.2);
 
   user-select: none;
-  touch-action: manipulation;
+  touch-action: none;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
 }
+
 .joystick .stick {
   position: absolute;
   left: 50%;
@@ -81,7 +82,7 @@ canvas {
   transform: translate(0, 0);
 
   user-select: none;
-  touch-action: manipulation;
+  touch-action: none;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
 }
@@ -99,6 +100,7 @@ canvas {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
 }
+
 .actions button {
   width: 56px;
   height: 56px;
@@ -112,6 +114,22 @@ canvas {
   touch-action: manipulation;
   user-select: none;
   -webkit-user-select: none;
+}
+
+#reset-button {
+  position: absolute;
+  top: 36px;
+  right: 60px;
+  width: 120px;
+  text-align: center;
+  background-color: grey;
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  padding: 10px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
 }
 
 .rotate-overlay {

@@ -30,6 +30,8 @@ function start() {
   const playerIsUp = Module.cwrap("player_up", null, []);
   const playerIsDown = Module.cwrap("player_down", null, []);
 
+  const resetGame = Module.cwrap("reset_game", null, []);
+
 
   let last = performance.now();
 
@@ -84,6 +86,7 @@ function start() {
 	const fire = () => {
 	  if (action === "grow") playerIsUp();
 	  if (action === "shrink") playerIsDown();
+	  if (action === "reset") resetGame();
 	};
 	const clearTimers = () => {
 	  if (repeatTimeout) {
