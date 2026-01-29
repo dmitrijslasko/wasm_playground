@@ -54,8 +54,11 @@ canvas {
   border-radius: 50%;
   background: rgba(34, 34, 34, 0.6);
   border: 10px solid rgba(255, 255, 255, 0.2);
-  touch-action: none;
   user-select: none;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -webkit-user-select: none;
 }
 .joystick .stick {
   position: absolute;
@@ -68,8 +71,10 @@ canvas {
   border-radius: 50%;
   background: rgba(60, 60, 60, 0.9);
   border: 2px solid rgba(255, 255, 255, 0.2);
-  touch-action: none;
   user-select: none;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
   -webkit-user-select: none;
   transform: translate(0, 0);
 }
@@ -81,7 +86,9 @@ canvas {
   grid-template-columns: 56px 56px;
   gap: 8px;
   user-select: none;
-  touch-action: none;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
 }
 .actions button {
   width: 56px;
