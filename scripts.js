@@ -109,6 +109,7 @@ function start() {
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d", { alpha: false });
   const scoreEl = document.getElementById("score");
+  const gameOverEl = document.getElementById("game-over-screen");
 
   // MUST match canvas width/height
   const W = canvas.width;
@@ -131,6 +132,7 @@ function start() {
 
   const resetGame = Module.cwrap("reset_game", null, []);
   const getGameScore = Module.cwrap("get_game_score", "number", []);
+  const getGameOver = Module.cwrap("get_game_over", "number", []);
   const getPlayerX = Module.cwrap("get_player_x", "number", []);
   const getPlayerY = Module.cwrap("get_player_y", "number", []);
   const getPlayerSize = Module.cwrap("get_player_size", "number", []);
@@ -145,6 +147,7 @@ function start() {
 
   let last = performance.now();
   let lastScore = null;
+  let lastGameOver = null;
 
   // keys that are pressed right now
   const keys = new Set();
@@ -197,6 +200,13 @@ function start() {
 	  if (score !== lastScore) {
 		scoreEl.textContent = String(score);
 		lastScore = score;
+	  }
+	}
+	if (gameOverEl) {
+	  const isGameOver = getGameOver() === 1;
+	  if (isGameOver !== lastGameOver) {
+		gameOverEl.style.display = isGameOver ? "block" : "none";
+		lastGameOver = isGameOver;
 	  }
 	}
 
