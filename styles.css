@@ -147,7 +147,7 @@ canvas {
   right: 60px;
   width: 120px;
   text-align: center;
-  background-color: darkgoldenrod;
+  background-color: darkslateblue;
   color: white;
   font-size: 24px;
   font-weight: bold;
@@ -158,7 +158,7 @@ canvas {
 }
 
 #reset-button:hover {
-  transform: scale(1.5); /* (150% zoom - Note: if the zoom is too large, it will go outside of the viewport) */
+  transform: scale(1.2); /* (150% zoom - Note: if the zoom is too large, it will go outside of the viewport) */
 }
 
 .rotate-overlay {

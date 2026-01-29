@@ -12,7 +12,6 @@
 
 #define GROUND_Y 500
 
-
 #define OBSTACLE_BASE_SIZE 100
 
 #define OBSTACLE_Y_BASE_POSITION 420

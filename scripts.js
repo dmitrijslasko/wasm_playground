@@ -157,7 +157,7 @@ function start() {
 	if (dt > 0.05) dt = 0.05;
 
 	// this is the step size for the movement of the rect
-  const step = 120 * dt;
+  const step = 200 * dt;
   if (joyX !== 0 || joyY !== 0) {
 	moveRect(joyX * step, joyY * step);
   }
