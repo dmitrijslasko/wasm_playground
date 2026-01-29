@@ -1,3 +1,5 @@
 .vscode
+.cursor
+.DS_Store
 demo.wasm
 demo.js
