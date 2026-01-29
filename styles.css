@@ -157,10 +157,13 @@ canvas {
   cursor: pointer;
 }
 
+<<<<<<< HEAD
 #reset-button:hover {
   transform: scale(1.5); /* (150% zoom - Note: if the zoom is too large, it will go outside of the viewport) */
 }
 
+=======
+>>>>>>> 2262093ba789ceb998691fe785f1e4145d7315b6
 .rotate-overlay {
   position: fixed;
   inset: 0;
