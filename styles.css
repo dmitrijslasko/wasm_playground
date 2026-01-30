@@ -218,6 +218,14 @@ canvas {
   padding: 24px;
 }
 
+
+@media (min-width: 600px) {
+  .joystick,
+  .actions {
+    display: none;
+  }
+}
+
 @media (orientation: portrait) {
   .rotate-overlay {
 	display: flex;

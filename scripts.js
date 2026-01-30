@@ -197,6 +197,7 @@ function start() {
 	  ctx.imageSmoothingEnabled = false;
 	  ctx.drawImage(playerTexture, px, py, ps, ps);
 	}
+	
 	if (scoreEl) {
 	  const score = getGameScore();
 	  if (score !== lastScore) {
@@ -327,6 +328,11 @@ function start() {
   });
 
   document.addEventListener("keydown", (e) => {
+	if (e.code === "Space") {
+	  e.preventDefault();
+	  resetGame();
+	  return;
+	}
 	if (e.code === "Equal") {
 	  e.preventDefault();
 	  growRect();

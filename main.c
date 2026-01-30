@@ -303,7 +303,7 @@ void game_step(float dt)
         dt = 0.0f;
     }
 
-    obstacle_course_movement_speed += (game_score / 400) * 2.0f * dt;
+    obstacle_course_movement_speed += (game_score / 400) * 1.5f * dt;
     obstacle_course_x -= obstacle_course_movement_speed * dt;
 
     // if (!cleared) {
