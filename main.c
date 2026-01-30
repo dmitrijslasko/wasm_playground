@@ -63,6 +63,7 @@ static int obstacle_h = 0;
 static float obstacle_course_movement_speed = OBSTACLE_COURSE_MOVEMENT_SPEED;
 
 static int game_score = 0;
+static int high_score = 0;
 
 EMSCRIPTEN_KEEPALIVE
 void set_sky_texture(uint8_t *pixels, int w, int h)
@@ -150,6 +151,7 @@ int reset_game(void)
     player_vel_y = 0.0f;
     obstacle_course_x = (float)OBSTACLE_COURSE_STARTING_X;
     game_over = 0;
+    high_score = game_score;
     game_score = 0;
     obstacle_course_movement_speed = OBSTACLE_COURSE_MOVEMENT_SPEED;
     return 0;

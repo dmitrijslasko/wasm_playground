@@ -110,6 +110,7 @@ function start() {
   const ctx = canvas.getContext("2d", { alpha: false });
   const scoreEl = document.getElementById("score");
   const gameOverEl = document.getElementById("game-over-screen");
+  const highScoreEl = document.getElementById("high-score");
 
   // MUST match canvas width/height
   const W = canvas.width;
@@ -148,6 +149,7 @@ function start() {
   let last = performance.now();
   let lastScore = null;
   let lastGameOver = null;
+  let highScore = 0;
 
   // keys that are pressed right now
   const keys = new Set();
@@ -200,6 +202,10 @@ function start() {
 	  if (score !== lastScore) {
 		scoreEl.textContent = String(score);
 		lastScore = score;
+	  }
+	  if (highScoreEl && score > highScore) {
+		highScore = score;
+		highScoreEl.textContent = String(highScore);
 	  }
 	}
 	if (gameOverEl) {
