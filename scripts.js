@@ -20,6 +20,39 @@ let skyTexture2Ready = false;
 
 let playerTexture = null;
 let playerTextureReady = false;
+let audioContext = null;
+let audioBuffers = {};
+let audioUnlocked = false;
+
+function initAudio() {
+  if (!audioContext) {
+	const AudioCtx = window.AudioContext || window.webkitAudioContext;
+	if (!AudioCtx) return;
+	audioContext = new AudioCtx();
+  }
+  if (audioContext.state === "suspended") {
+	audioContext.resume().catch(() => {});
+  }
+}
+
+function unlockAudioFromGesture() {
+	if (audioUnlocked) return;
+  
+	const AudioCtx = window.AudioContext || window.webkitAudioContext;
+	if (!audioContext) {
+	  audioContext = new AudioCtx();
+	}
+  
+	// Synchronous silent buffer (required for iOS)
+	const buffer = audioContext.createBuffer(1, 1, audioContext.sampleRate);
+	const source = audioContext.createBufferSource();
+	source.buffer = buffer;
+	source.connect(audioContext.destination);
+	source.start(0);
+  
+	audioUnlocked = true;
+  }
+  
 
 function loadPlayerTexture() {
   const img = new Image();
@@ -31,6 +64,57 @@ function loadPlayerTexture() {
   img.onerror = () => {
 	playerTextureReady = false;
   };
+}
+
+function loadSound(path, key) {
+  initAudio();
+  if (!audioContext) return;
+  fetch(path)
+	.then((res) => res.arrayBuffer())
+	.then((data) => audioContext.decodeAudioData(data))
+	.then((buffer) => {
+	  audioBuffers[key] = buffer;
+	})
+	.catch(() => {});
+}
+
+function playSound(key) {
+  if (!audioContext) return;
+  const buffer = audioBuffers[key];
+  if (!buffer) return;
+  try {
+	const source = audioContext.createBufferSource();
+	source.buffer = buffer;
+	source.connect(audioContext.destination);
+	source.start(0);
+  } catch (err) {
+	// ignore playback errors
+  }
+}
+
+function playUnlockSound() {
+  if (!audioContext) return;
+  try {
+	const buffer = audioContext.createBuffer(1, 1, audioContext.sampleRate);
+	const source = audioContext.createBufferSource();
+	source.buffer = buffer;
+	source.connect(audioContext.destination);
+	source.start(0);
+  } catch (err) {
+	// ignore playback errors
+  }
+}
+
+function playJumpSound() {
+  playSound("jump");
+}
+
+function playBonusSound() {
+  playSound("bonus");
+}
+
+function playGameOverSound() {
+  playSound("gameOver");
 }
 
 function loadTexture(texturePath, function_to_call) {
@@ -64,6 +148,24 @@ function start() {
   console.log("WASM ready");
 
   loadPlayerTexture();
+  loadSound("assets/jump.m4a", "jump");
+  loadSound("assets/bite.m4a", "bonus");
+  loadSound("assets/game-over.m4a", "gameOver");
+
+  const enableAudio = () => initAudio();
+  const unlockAudio = () => {
+	if (audioUnlocked) return;
+	initAudio();
+	if (!audioContext) return;
+	audioContext.resume().then(() => {
+	  playUnlockSound();
+	  playSound("jump");
+	  audioUnlocked = true;
+	}).catch(() => {});
+  };
+  document.addEventListener("pointerdown", unlockAudio, { once: true });
+  document.addEventListener("touchstart", unlockAudio, { once: true, passive: true });
+  document.addEventListener("keydown", enableAudio, { once: true });
 
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d", { alpha: false });
@@ -93,6 +195,9 @@ function start() {
   const resetGame = Module.cwrap("reset_game", null, []);
   const getGameScore = Module.cwrap("get_game_score", "number", []);
   const getGameOver = Module.cwrap("get_game_over", "number", []);
+  const getBonusCollected = Module.cwrap("get_bonus_collected", "number", []);
+  const getJumpTriggered = Module.cwrap("get_jump_triggered", "number", []);
+  const getGameOverTriggered = Module.cwrap("get_game_over_triggered", "number", []);
   const getPlayerX = Module.cwrap("get_player_x", "number", []);
   const getPlayerY = Module.cwrap("get_player_y", "number", []);
   const getPlayerSize = Module.cwrap("get_player_size", "number", []);
@@ -180,6 +285,15 @@ function start() {
 		lastGameOver = isGameOver;
 	  }
 	}
+	if (getBonusCollected() === 1) {
+	  playBonusSound();
+	}
+	if (getJumpTriggered() === 1) {
+	  playJumpSound();
+	}
+	if (getGameOverTriggered() === 1) {
+	  playGameOverSound();
+	}
 
 	requestAnimationFrame(loop);
   }
@@ -206,6 +320,7 @@ function start() {
 	};
 	const onDown = (e) => {
 	  e.preventDefault();
+	  unlockAudio();
 	  fire();
 	  clearTimers();
 	  repeatTimeout = setTimeout(() => {

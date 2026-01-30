@@ -35,7 +35,7 @@ static int player_active_jump_up = 0;
 static float player_vel_y = 0.0f;
 
 static char* obstacle_course = "10101001010001010001000100010010101001010100101001010000010010010010000010010010101010101010100101010101010101010100010101010101010001";
-static char* bonus_course =    "10000101000011000100010000010100010000100100101010100010100000100100010100101001000100011010101001010101000101000100010001000101010011";
+static char* bonus_course =    "00200102032011002100012000010103201001010010013101010001010000010014001010010100100010021103010200401010100010100010001000000101010011";
 
 static char* bonus_course_copy = NULL;
 
@@ -53,6 +53,10 @@ static float bonus_course_movement_speed = BONUS_COURSE_MOVEMENT_SPEED;
 
 static int game_score = 0;
 static int high_score = 0;
+
+static int bonus_collected = 0;
+static int jump_triggered = 0;
+static int game_over_triggered = 0;
 
 
 
@@ -93,6 +97,9 @@ int reset_game(void)
     game_state = GAME_ACTIVE;
     high_score = game_score;
     game_score = 0;
+    bonus_collected = 0;
+    jump_triggered = 0;
+    game_over_triggered = 0;
     obstacle_course_movement_speed = OBSTACLE_COURSE_MOVEMENT_SPEED;
     bonus_course_movement_speed = BONUS_COURSE_MOVEMENT_SPEED;
     init_bonus_course_copy();
@@ -109,6 +116,27 @@ int get_game_over(void) {
     return game_state == GAME_OVER;
 }
 
+EMSCRIPTEN_KEEPALIVE
+int get_bonus_collected(void) {
+    int value = bonus_collected;
+    bonus_collected = 0;
+    return value;
+}
+
+EMSCRIPTEN_KEEPALIVE
+int get_jump_triggered(void) {
+    int value = jump_triggered;
+    jump_triggered = 0;
+    return value;
+}
+
+EMSCRIPTEN_KEEPALIVE
+int get_game_over_triggered(void) {
+    int value = game_over_triggered;
+    game_over_triggered = 0;
+    return value;
+}
+
 void update_obstacle_collisions(void) {
     float ox = obstacle_course_x;
     char *p = obstacle_course;
@@ -119,6 +147,7 @@ void update_obstacle_collisions(void) {
                              ox, OBSTACLE_Y_BASE_POSITION,
                              OBSTACLE_BASE_SIZE, OBSTACLE_BASE_SIZE)) {
                 game_state = GAME_OVER;
+                game_over_triggered = 1;
                 }
             }
         ox += OBSTACLE_COURSE_BASE_WIDTH;
@@ -140,6 +169,7 @@ void update_bonus_collisions(void) {
                              BONUS_BASE_SIZE, BONUS_BASE_SIZE)) {
                 game_score += BONUS_BASE_VALUE;
                 *p = '0';
+                bonus_collected = 1;
                 }
             }
         ox += BONUS_COURSE_BASE_WIDTH;
@@ -183,13 +213,18 @@ void    render_bonus_course(void)
     char *bonus_course_ptr = bonus_course_copy;
     while (*bonus_course_ptr != '\0' && bonus_x_position < FRAMEBUFFER_WIDTH)
     {
-        if (*bonus_course_ptr >= '1')
-        {
-            if (bonus_x_position < -BONUS_BASE_SIZE)
-                ;
-            else
-                render_bonus(bonus_x_position, BONUS_Y_BASE_POSITION);
-        }
+        if (bonus_x_position < -BONUS_BASE_SIZE)
+            ;
+        else if (*bonus_course_ptr >= '1') {
+            if (*bonus_course_ptr == '1')
+                render_bonus(bonus_x_position, 250);
+            else if (*bonus_course_ptr == '2')
+                render_bonus(bonus_x_position, 200);
+            else if (*bonus_course_ptr == '3')
+                render_bonus(bonus_x_position, 150);
+            else if (*bonus_course_ptr == '4')
+                render_bonus(bonus_x_position, 100);
+            }
         bonus_x_position += BONUS_COURSE_BASE_WIDTH;
         bonus_course_ptr++;
     }
@@ -388,6 +423,7 @@ void player_up(void)
     player_active_jump = 1;
     player_active_jump_up = 1;
     player_vel_y = -JUMP_VELOCITY;
+    jump_triggered = 1;
 }
 
 EMSCRIPTEN_KEEPALIVE
