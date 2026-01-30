@@ -1,3 +1,11 @@
+let skyTexture1Path = "assets/pixel-sky-1.png";
+let skyTexture2Path = "assets/pixel-sky-2.png";
+let groundTexturePath = "assets/ground.png";
+let obstacleTexturePath = "assets/obstacle.png";
+let bonusTexturePath = "assets/coin.png";
+
+let playerTexturePath = "assets/player.png";
+
 // Define Module BEFORE loading demo.js
 var Module = {
   onRuntimeInitialized() {
@@ -5,12 +13,17 @@ var Module = {
   }
 };
 
+let skyTexture1 = null;
+let skyTexture2 = null;
+let skyTexture1Ready = false;
+let skyTexture2Ready = false;
+
 let playerTexture = null;
 let playerTextureReady = false;
 
 function loadPlayerTexture() {
   const img = new Image();
-  img.src = "assets/player.png";
+  img.src = playerTexturePath;
   img.onload = () => {
 	playerTexture = img;
 	playerTextureReady = true;
@@ -20,90 +33,36 @@ function loadPlayerTexture() {
   };
 }
 
-function loadSkyTexture(setSkyTexture) {
-  const skyImg = new Image();
-  skyImg.src = "assets/pixel-sky.jpg";
-  skyImg.onload = () => {
-	const tmp = document.createElement("canvas");
-	tmp.width = skyImg.width;
-	tmp.height = skyImg.height;
-
-	const tctx = tmp.getContext("2d");
-	tctx.drawImage(skyImg, 0, 0);
-
-	const imgData = tctx.getImageData(0, 0, skyImg.width, skyImg.height);
-	const size = imgData.data.length;
-	const ptr = Module._malloc(size);
-	try {
-	  const heap = Module.HEAPU8 || HEAPU8;
-	  heap.set(imgData.data, ptr);
-	  setSkyTexture(ptr, skyImg.width, skyImg.height);
-	} catch (err) {
-	  console.error("Failed to upload sky texture:", err);
-	}
-  };
-  skyImg.onerror = () => {
-	console.warn("Failed to load pixel-sky.jpg");
-  };
-}
-
-function loadGroundTexture(setGroundTexture) {
-	const groundImg = new Image();
-	groundImg.src = "assets/ground.png";
-	groundImg.onload = () => {
+function loadTexture(texturePath, function_to_call) {
+	const img = new Image();
+	img.src = texturePath;
+	img.onload = () => {
 	  const tmp = document.createElement("canvas");
-	  tmp.width = groundImg.width;
-	  tmp.height = groundImg.height;
+	  tmp.width = img.width;
+	  tmp.height = img.height;
   
 	  const tctx = tmp.getContext("2d");
-	  tctx.drawImage(groundImg, 0, 0);
+	  tctx.drawImage(img, 0, 0);
   
-	  const imgData = tctx.getImageData(0, 0, groundImg.width, groundImg.height);
+	  const imgData = tctx.getImageData(0, 0, img.width, img.height);
 	  const size = imgData.data.length;
 	  const ptr = Module._malloc(size);
 	  try {
 		const heap = Module.HEAPU8 || HEAPU8;
 		heap.set(imgData.data, ptr);
-		setGroundTexture(ptr, groundImg.width, groundImg.height);
+		function_to_call(ptr, img.width, img.height);
 	  } catch (err) {
-		console.error("Failed to upload ground texture:", err);
+		console.error("Failed to upload sky texture:", err);
 	  }
 	};
-	groundImg.onerror = () => {
-	  console.warn("Failed to load ground texture");
+	img.onerror = () => {
+	  console.warn(`Failed to load ${texturePath}`);
 	};
   }
-
-function loadObstacleTexture(setObstacleTexture) {
-  const obstacleImg = new Image();
-  obstacleImg.src = "assets/obstacle.png";
-  obstacleImg.onload = () => {
-	const tmp = document.createElement("canvas");
-	tmp.width = obstacleImg.width;
-	tmp.height = obstacleImg.height;
-
-	const tctx = tmp.getContext("2d");
-	tctx.drawImage(obstacleImg, 0, 0);
-
-	const imgData = tctx.getImageData(0, 0, obstacleImg.width, obstacleImg.height);
-	const size = imgData.data.length;
-	const ptr = Module._malloc(size);
-	try {
-	  const heap = Module.HEAPU8 || HEAPU8;
-	  heap.set(imgData.data, ptr);
-	  setObstacleTexture(ptr, obstacleImg.width, obstacleImg.height);
-	} catch (err) {
-	  console.error("Failed to upload obstacle texture:", err);
-	}
-  };
-  obstacleImg.onerror = () => {
-	console.warn("Failed to load obstacle.png");
-  };
-}
   
-
 function start() {
   console.log("WASM ready");
+
   loadPlayerTexture();
 
   const canvas = document.getElementById("game");
@@ -137,14 +96,19 @@ function start() {
   const getPlayerX = Module.cwrap("get_player_x", "number", []);
   const getPlayerY = Module.cwrap("get_player_y", "number", []);
   const getPlayerSize = Module.cwrap("get_player_size", "number", []);
-  const setSkyTexture = Module.cwrap("set_sky_texture", null, ["number", "number", "number"]);
+
+  const setSkyTexture1 = Module.cwrap("set_sky_texture1", null, ["number", "number", "number"]);
+  const setSkyTexture2 = Module.cwrap("set_sky_texture2", null, ["number", "number", "number"]);
+
   const setGroundTexture = Module.cwrap("set_ground_texture", null, ["number", "number", "number"]);
   const setObstacleTexture = Module.cwrap("set_obstacle_texture", null, ["number", "number", "number"]);
+  const setBonusTexture = Module.cwrap("set_bonus_texture", null, ["number", "number", "number"]);
 
-  loadSkyTexture(setSkyTexture);
-  loadGroundTexture(setGroundTexture);
-  loadObstacleTexture(setObstacleTexture);
-
+  loadTexture(skyTexture1Path, setSkyTexture1);
+  loadTexture(skyTexture2Path, setSkyTexture2);
+  loadTexture(groundTexturePath, setGroundTexture);
+  loadTexture(obstacleTexturePath, setObstacleTexture);
+  loadTexture(bonusTexturePath, setBonusTexture);
 
   let last = performance.now();
   let lastScore = null;
