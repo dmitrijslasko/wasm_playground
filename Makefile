@@ -1,5 +1,9 @@
+SRC = src/main.c \
+		src/sky.c \
+		src/ground.c
+		
 all:
-	emcc main.c \
+	emcc $(SRC) \
 	-O2 \
 	-s WASM=1 \
 	-s ALLOW_MEMORY_GROWTH=1 \

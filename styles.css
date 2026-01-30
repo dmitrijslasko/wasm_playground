@@ -218,11 +218,15 @@ canvas {
   padding: 24px;
 }
 
+.joystick,
+.actions {
+  display: none;
+}
 
-@media (min-width: 600px) {
+@media (hover: none) and (pointer: coarse) {
   .joystick,
   .actions {
-    display: none;
+    display: block;
   }
 }
 

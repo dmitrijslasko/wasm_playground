@@ -2,32 +2,20 @@
 #include <stdio.h>
 #include <emscripten/emscripten.h>
 
-#define FRAMEBUFFER_WIDTH 960
-#define FRAMEBUFFER_HEIGHT 600
+#include "functions.h"
+#include "settings.h"
+#include "render_utils.h"
 
-#define PLAYER_POS_X_STARTING_POSITION 400
-
-#define PLAYER_POS_Y_STARTING_POSITION 420
-#define PLAYER_JUMP_HEIGHT 350
-#define GRAVITY 2000.0f
-#define JUMP_VELOCITY 1200.0f
-#define FAST_FALL_VELOCITY 0.0f
-
-#define GROUND_Y 500
-
-#define OBSTACLE_BASE_SIZE 100
-
-#define OBSTACLE_Y_BASE_POSITION 420
-#define OBSTACLE_COURSE_BASE_WIDTH 150.0f
-#define OBSTACLE_COURSE_STARTING_X 900.0f
-#define OBSTACLE_COURSE_MOVEMENT_SPEED 100.0f
-
-#define PLAYER_SIZE_STARTING 100
-#define PLAYER_MOVEMENT_SPEED 3
 
 static uint32_t framebuffer[FRAMEBUFFER_WIDTH * FRAMEBUFFER_HEIGHT];
 
-static int game_over = 0;
+typedef enum {
+    GAME_ACTIVE,
+    GAME_PAUSED,
+    GAME_OVER
+} e_game_state;
+
+static e_game_state game_state = GAME_PAUSED;
 
 static uint8_t current_r = 255;
 static uint8_t current_g = 0;
@@ -38,48 +26,33 @@ static int player_size = PLAYER_SIZE_STARTING;
 static int player_size_step = 1;
 
 static int player_pos_x = PLAYER_POS_X_STARTING_POSITION;
-static int player_pos_y = PLAYER_POS_Y_STARTING_POSITION;
+static int player_pos_y = PLAYER_Y_BASE_POSITION;
 
 static int player_active_jump = 0;
 static int player_active_jump_up = 0;
 static float player_vel_y = 0.0f;
 
 static char* obstacle_course = "10101001010001010001000100010010101001010100101001010000010010010010000010010010101010101010100101010101010101010100010101010101010001";
+static char* bonus_course =    "00000101000011000100010000010100010000100100101010100010100000100100010100101001000100011010101001010101000101000100010001000101010011";
+
 // static int obstacle_course_starting_x = OBSTACLE_COURSE_STARTING_X;
 
-static float obstacle_course_x = (float)OBSTACLE_COURSE_STARTING_X;
-
-static uint8_t *sky_pixels = NULL;
-static int sky_w = 0;
-static int sky_h = 0;
-
-static uint8_t *ground_pixels = NULL;
-static int ground_w = 0;
-static int ground_h = 0;
+static float obstacle_course_x = OBSTACLE_COURSE_STARTING_X;
 
 static uint8_t *obstacle_pixels = NULL;
 static int obstacle_w = 0;
 static int obstacle_h = 0;
 static float obstacle_course_movement_speed = OBSTACLE_COURSE_MOVEMENT_SPEED;
 
+static uint8_t *bonus_pixels = NULL;
+static int bonus_w = 0;
+static int bonus_h = 0;
+static float bonus_course_movement_speed = OBSTACLE_COURSE_MOVEMENT_SPEED;
+
 static int game_score = 0;
 static int high_score = 0;
 
-EMSCRIPTEN_KEEPALIVE
-void set_sky_texture(uint8_t *pixels, int w, int h)
-{
-    sky_pixels = pixels;
-    sky_w = w;
-    sky_h = h;
-}
 
-EMSCRIPTEN_KEEPALIVE
-void set_ground_texture(uint8_t *pixels, int w, int h)
-{
-    ground_pixels = pixels;
-    ground_w = w;
-    ground_h = h;
-}
 
 EMSCRIPTEN_KEEPALIVE
 void set_obstacle_texture(uint8_t *pixels, int w, int h)
@@ -89,68 +62,24 @@ void set_obstacle_texture(uint8_t *pixels, int w, int h)
     obstacle_h = h;
 }
 
-static inline uint32_t pack_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+EMSCRIPTEN_KEEPALIVE
+void set_bonus_texture(uint8_t *pixels, int w, int h)
 {
-    return (uint32_t)(r | (g << 8) | (b << 16) | (a << 24));
-}
-
-static void draw_sky(void)
-{
-    if (!sky_pixels || sky_w <= 0 || sky_h <= 0) {
-        return;
-    }
-
-    for (int y = 0; y < GROUND_Y; y++) {
-        int sy = (y * sky_h) / GROUND_Y;
-        for (int x = 0; x < FRAMEBUFFER_WIDTH; x++) {
-            int sx = (x * sky_w) / FRAMEBUFFER_WIDTH;
-            int si = (sy * sky_w + sx) * 4;
-            uint8_t r = sky_pixels[si + 0];
-            uint8_t g = sky_pixels[si + 1];
-            uint8_t b = sky_pixels[si + 2];
-            uint8_t a = sky_pixels[si + 3];
-            framebuffer[y * FRAMEBUFFER_WIDTH + x] = pack_rgba(r, g, b, a);
-        }
-    }
-}
-
-static void draw_ground(void)
-{
-    if (!ground_pixels || ground_w <= 0 || ground_h <= 0) {
-        for (int y = GROUND_Y; y < FRAMEBUFFER_HEIGHT; y++) {
-            for (int x = 0; x < FRAMEBUFFER_WIDTH; x++) {
-                framebuffer[y * FRAMEBUFFER_WIDTH + x] =
-                    pack_rgba(0, 255, 0, 255);
-            }
-        }
-        return;
-    }
-
-    const int ground_height = FRAMEBUFFER_HEIGHT - GROUND_Y;
-    for (int y = GROUND_Y; y < FRAMEBUFFER_HEIGHT; y++) {
-        int sy = ((y - GROUND_Y) * ground_h) / ground_height;
-        for (int x = 0; x < FRAMEBUFFER_WIDTH; x++) {
-            int sx = (x * ground_w) / FRAMEBUFFER_WIDTH;
-            int si = (sy * ground_w + sx) * 4;
-            uint8_t r = ground_pixels[si + 0];
-            uint8_t g = ground_pixels[si + 1];
-            uint8_t b = ground_pixels[si + 2];
-            uint8_t a = ground_pixels[si + 3];
-            framebuffer[y * FRAMEBUFFER_WIDTH + x] = pack_rgba(r, g, b, a);
-        }
-    }
+    bonus_pixels = pixels;
+    bonus_w = w;
+    bonus_h = h;
 }
 
 EMSCRIPTEN_KEEPALIVE
 int reset_game(void)
 {
     player_pos_x = PLAYER_POS_X_STARTING_POSITION;
-    player_pos_y = PLAYER_POS_Y_STARTING_POSITION;
+    player_pos_y = PLAYER_Y_BASE_POSITION;
     player_active_jump = 0;
     player_active_jump_up = 0;
     player_vel_y = 0.0f;
     obstacle_course_x = (float)OBSTACLE_COURSE_STARTING_X;
-    game_over = 0;
+    game_state = GAME_ACTIVE;
     high_score = game_score;
     game_score = 0;
     obstacle_course_movement_speed = OBSTACLE_COURSE_MOVEMENT_SPEED;
@@ -158,27 +87,13 @@ int reset_game(void)
 }
 
 EMSCRIPTEN_KEEPALIVE
-int get_game_score(void)
-{
+int get_game_score(void) {
     return game_score;
 }
 
 EMSCRIPTEN_KEEPALIVE
-int get_game_over(void)
-{
-    return game_over;
-}
-
-int    check_collision(int obstacle_x_pos, int obstacle_y_pos)
-{
-    if (player_pos_x == obstacle_x_pos && player_pos_y == obstacle_y_pos)
-        return 1;
-    return 0;
-}
-
-int aabb_overlap(int ax, int ay, int aw, int ah, int bx, int by, int bw, int bh) {
-    return ax < bx + bw && ax + aw > bx &&
-           ay < by + bh && ay + ah > by;
+int get_game_over(void) {
+    return game_state == GAME_OVER;
 }
 
 void update_collisions(void) {
@@ -190,7 +105,7 @@ void update_collisions(void) {
             if (aabb_overlap(player_pos_x, player_pos_y, player_size, player_size,
                              ox, OBSTACLE_Y_BASE_POSITION,
                              OBSTACLE_BASE_SIZE, OBSTACLE_BASE_SIZE)) {
-                game_over = 1;
+                game_state = GAME_OVER;
                 }
             }
         ox += OBSTACLE_COURSE_BASE_WIDTH;
@@ -266,15 +181,15 @@ void update_player_position(float dt)
     }
 
     if (!player_active_jump) {
-        player_pos_y = PLAYER_POS_Y_STARTING_POSITION;
+        player_pos_y = PLAYER_Y_BASE_POSITION;
         player_vel_y = 0.0f;
         return;
     }
 
     player_vel_y += GRAVITY * dt;
     player_pos_y += (int)(player_vel_y * dt);
-    if (player_pos_y >= PLAYER_POS_Y_STARTING_POSITION) {
-        player_pos_y = PLAYER_POS_Y_STARTING_POSITION;
+    if (player_pos_y >= PLAYER_Y_BASE_POSITION) {
+        player_pos_y = PLAYER_Y_BASE_POSITION;
         player_vel_y = 0.0f;
         player_active_jump = 0;
     }
@@ -294,7 +209,7 @@ void game_step(float dt)
         puts("HELLO FROM C");
     }
     
-    if (game_over)
+    if (game_state == GAME_OVER)
         return ;
 
     update_score();
@@ -331,9 +246,9 @@ void game_step(float dt)
     uint32_t color =
         (uint32_t)(current_r | (current_g << 8) | (current_b << 16) | (current_a << 24));
 
-    draw_sky();
+    draw_sky(framebuffer);
 
-    draw_ground();
+    draw_ground(framebuffer);
        
     render_obstacle_course();
     update_player_position(dt);
@@ -377,7 +292,7 @@ void shrink_rect(void)
 EMSCRIPTEN_KEEPALIVE
 void player_up(void)
 {
-    if (game_over || player_active_jump)
+    if (game_state == GAME_OVER || player_active_jump)
         return;
     player_active_jump = 1;
     player_active_jump_up = 1;
@@ -387,7 +302,7 @@ void player_up(void)
 EMSCRIPTEN_KEEPALIVE
 void player_down(void)
 {
-    if (game_over)
+    if (game_state == GAME_OVER)
         return;
     if (!player_active_jump)
         return;
@@ -404,7 +319,7 @@ void player_down(void)
 EMSCRIPTEN_KEEPALIVE
 void move_rect(int dx, int dy)
 {
-    if (game_over)
+    if (game_state == GAME_OVER)
         return;
         
     player_pos_x += dx;
