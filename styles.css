@@ -68,6 +68,28 @@ canvas {
   pointer-events: none;
 }
 
+#high-scoreboard {
+  position: absolute;
+  top: 18px;
+  left: 10%;
+  color: #fff;
+  font-family: 'Press Start 2P', system-ui, sans-serif;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.0);
+  pointer-events: none;
+}
+
+#high-scoreboard .label {
+  font-size: 2.4vh;
+  opacity: 0.8;
+  margin-bottom: 4px;
+}
+
+#high-score {
+  font-size: 4vh;
+}
+
 #game-over-screen {
   width: 100vw;
   text-align: center;
@@ -196,6 +218,14 @@ canvas {
   padding: 24px;
 }
 
+
+@media (min-width: 600px) {
+  .joystick,
+  .actions {
+    display: none;
+  }
+}
+
 @media (orientation: portrait) {
   .rotate-overlay {
 	display: flex;
@@ -204,6 +234,7 @@ canvas {
   .instructions,
   canvas,
   #scoreboard,
+  #high-scoreboard,
   #game-over-screen,
   .joystick,
   .actions {

@@ -18,9 +18,9 @@
 #define OBSTACLE_BASE_SIZE 100
 
 #define OBSTACLE_Y_BASE_POSITION 420
-#define OBSTACLE_COURSE_BASE_WIDTH 150
-#define OBSTACLE_COURSE_STARTING_X 1200
-#define OBSTACLE_COURSE_MOVEMENT_SPEED 2
+#define OBSTACLE_COURSE_BASE_WIDTH 150.0f
+#define OBSTACLE_COURSE_STARTING_X 900.0f
+#define OBSTACLE_COURSE_MOVEMENT_SPEED 100.0f
 
 #define PLAYER_SIZE_STARTING 100
 #define PLAYER_MOVEMENT_SPEED 3
@@ -45,7 +45,9 @@ static int player_active_jump_up = 0;
 static float player_vel_y = 0.0f;
 
 static char* obstacle_course = "10101001010001010001000100010010101001010100101001010000010010010010000010010010101010101010100101010101010101010100010101010101010001";
-static int obstacle_course_starting_x = OBSTACLE_COURSE_STARTING_X;
+// static int obstacle_course_starting_x = OBSTACLE_COURSE_STARTING_X;
+
+static float obstacle_course_x = (float)OBSTACLE_COURSE_STARTING_X;
 
 static uint8_t *sky_pixels = NULL;
 static int sky_w = 0;
@@ -58,8 +60,10 @@ static int ground_h = 0;
 static uint8_t *obstacle_pixels = NULL;
 static int obstacle_w = 0;
 static int obstacle_h = 0;
+static float obstacle_course_movement_speed = OBSTACLE_COURSE_MOVEMENT_SPEED;
 
 static int game_score = 0;
+static int high_score = 0;
 
 EMSCRIPTEN_KEEPALIVE
 void set_sky_texture(uint8_t *pixels, int w, int h)
@@ -145,9 +149,11 @@ int reset_game(void)
     player_active_jump = 0;
     player_active_jump_up = 0;
     player_vel_y = 0.0f;
-    obstacle_course_starting_x = OBSTACLE_COURSE_STARTING_X;
+    obstacle_course_x = (float)OBSTACLE_COURSE_STARTING_X;
     game_over = 0;
+    high_score = game_score;
     game_score = 0;
+    obstacle_course_movement_speed = OBSTACLE_COURSE_MOVEMENT_SPEED;
     return 0;
 }
 
@@ -176,7 +182,7 @@ int aabb_overlap(int ax, int ay, int aw, int ah, int bx, int by, int bw, int bh)
 }
 
 void update_collisions(void) {
-    int ox = obstacle_course_starting_x;
+    float ox = obstacle_course_x;
     char *p = obstacle_course;
 
     while (*p && ox < FRAMEBUFFER_WIDTH) {
@@ -235,7 +241,7 @@ void    render_obstacle(int x_position, int y_position)
 }
 void    render_obstacle_course(void)
 {
-    int obstacle_x_position = obstacle_course_starting_x;
+    float obstacle_x_position = obstacle_course_x;
     // process the obstacle course string and render the obstacles
     char *obstacle_course_ptr = obstacle_course;
     
@@ -275,7 +281,7 @@ void update_player_position(float dt)
 }
 void update_score(void)
 {
-    if (obstacle_course_starting_x + OBSTACLE_BASE_SIZE < player_pos_x)
+    if (obstacle_course_x + OBSTACLE_BASE_SIZE < player_pos_x)
         game_score += 1;
 }
 
@@ -293,10 +299,12 @@ void game_step(float dt)
 
     update_score();
 
-    obstacle_course_starting_x -= OBSTACLE_COURSE_MOVEMENT_SPEED;
     if (dt < 0.0f) {
         dt = 0.0f;
     }
+
+    obstacle_course_movement_speed += (game_score / 400) * 1.5f * dt;
+    obstacle_course_x -= obstacle_course_movement_speed * dt;
 
     // if (!cleared) {
         for (int y = 0; y < FRAMEBUFFER_HEIGHT; y++) {
