@@ -1,6 +1,9 @@
-let obstacleTexturePath = "assets/obstacle.png";
+let skyTexture1Path = "assets/pixel-sky-1.png";
+let skyTexture2Path = "assets/pixel-sky-2.png";
 let groundTexturePath = "assets/ground.png";
-let skyTexturePath = "assets/pixel-sky.jpg";
+let obstacleTexturePath = "assets/obstacle.png";
+let bonusTexturePath = "assets/coin.png";
+
 let playerTexturePath = "assets/player.png";
 
 // Define Module BEFORE loading demo.js
@@ -9,6 +12,11 @@ var Module = {
 	start();
   }
 };
+
+let skyTexture1 = null;
+let skyTexture2 = null;
+let skyTexture1Ready = false;
+let skyTexture2Ready = false;
 
 let playerTexture = null;
 let playerTextureReady = false;
@@ -54,6 +62,7 @@ function loadTexture(texturePath, function_to_call) {
   
 function start() {
   console.log("WASM ready");
+
   loadPlayerTexture();
 
   const canvas = document.getElementById("game");
@@ -87,13 +96,19 @@ function start() {
   const getPlayerX = Module.cwrap("get_player_x", "number", []);
   const getPlayerY = Module.cwrap("get_player_y", "number", []);
   const getPlayerSize = Module.cwrap("get_player_size", "number", []);
-  const setSkyTexture = Module.cwrap("set_sky_texture", null, ["number", "number", "number"]);
+
+  const setSkyTexture1 = Module.cwrap("set_sky_texture1", null, ["number", "number", "number"]);
+  const setSkyTexture2 = Module.cwrap("set_sky_texture2", null, ["number", "number", "number"]);
+
   const setGroundTexture = Module.cwrap("set_ground_texture", null, ["number", "number", "number"]);
   const setObstacleTexture = Module.cwrap("set_obstacle_texture", null, ["number", "number", "number"]);
+  const setBonusTexture = Module.cwrap("set_bonus_texture", null, ["number", "number", "number"]);
 
-  loadTexture(skyTexturePath, setSkyTexture);
+  loadTexture(skyTexture1Path, setSkyTexture1);
+  loadTexture(skyTexture2Path, setSkyTexture2);
   loadTexture(groundTexturePath, setGroundTexture);
   loadTexture(obstacleTexturePath, setObstacleTexture);
+  loadTexture(bonusTexturePath, setBonusTexture);
 
   let last = performance.now();
   let lastScore = null;

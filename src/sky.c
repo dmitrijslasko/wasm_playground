@@ -1,40 +1,57 @@
 #include <emscripten/emscripten.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "settings.h"
 #include "render_utils.h"
 
 
-static uint8_t *sky_pixels = NULL;
-static int sky_w = 0;
-static int sky_h = 0;
+static uint8_t *sky1_pixels = NULL;
+static int sky1_w = 0;
+static int sky1_h = 0;
+static float sky1_scroll_x = 0;
+
+static uint8_t *sky2_pixels = NULL;
+static int sky2_w = 0;
+static int sky2_h = 0;
+static float sky2_scroll_x = 0;
 
 
 EMSCRIPTEN_KEEPALIVE
-void set_sky_texture(uint8_t *pixels, int w, int h)
+void set_sky_texture1(uint8_t *pixels, int w, int h)
 {
-    sky_pixels = pixels;
-    sky_w = w;
-    sky_h = h;
+    sky1_pixels = pixels;
+    sky1_w = w;
+    sky1_h = h;
 }
 
 EMSCRIPTEN_KEEPALIVE
-void draw_sky(uint32_t *framebuffer)
+void set_sky_texture2(uint8_t *pixels, int w, int h)
 {
-    if (!sky_pixels || sky_w <= 0 || sky_h <= 0) {
-        return;
-    }
+    sky2_pixels = pixels;
+    sky2_w = w;
+    sky2_h = h;
+}
+EMSCRIPTEN_KEEPALIVE
+void draw_sky1(uint32_t *framebuffer, float dt)
+{
+    sky1_scroll_x += dt * -20;
 
-    for (int y = 0; y < GROUND_LEVEL_Y; y++) {
-        int sy = (y * sky_h) / GROUND_LEVEL_Y;
-        for (int x = 0; x < FRAMEBUFFER_WIDTH; x++) {
-            int sx = (x * sky_w) / FRAMEBUFFER_WIDTH;
-            int si = (sy * sky_w + sx) * 4;
-            uint8_t r = sky_pixels[si + 0];
-            uint8_t g = sky_pixels[si + 1];
-            uint8_t b = sky_pixels[si + 2];
-            uint8_t a = sky_pixels[si + 3];
-            framebuffer[y * FRAMEBUFFER_WIDTH + x] = pack_rgba(r, g, b, a);
-        }
-    }
+    if (sky1_scroll_x <= -sky1_w)
+        sky1_scroll_x += sky1_w;
+
+    render_layer(sky1_pixels, sky1_w, sky1_h, sky1_scroll_x, 0, framebuffer);
+    render_layer(sky1_pixels, sky1_w, sky1_h, sky1_w + sky1_scroll_x, 0, framebuffer);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void draw_sky2(uint32_t *framebuffer, float dt)
+{
+    sky2_scroll_x += dt * -15;
+
+    if (sky2_scroll_x <= -sky2_w)
+        sky2_scroll_x += sky2_w;
+
+    render_layer(sky2_pixels, sky2_w, sky2_h, sky2_scroll_x, 0, framebuffer);
+    render_layer(sky2_pixels, sky2_w, sky2_h, sky2_w + sky2_scroll_x, 0, framebuffer);
 }

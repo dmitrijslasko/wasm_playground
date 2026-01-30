@@ -1,5 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
+#include <math.h>
 #include <emscripten/emscripten.h>
 
 #include "functions.h"
@@ -33,21 +35,21 @@ static int player_active_jump_up = 0;
 static float player_vel_y = 0.0f;
 
 static char* obstacle_course = "10101001010001010001000100010010101001010100101001010000010010010010000010010010101010101010100101010101010101010100010101010101010001";
-static char* bonus_course =    "00000101000011000100010000010100010000100100101010100010100000100100010100101001000100011010101001010101000101000100010001000101010011";
+static char* bonus_course =    "10000101000011000100010000010100010000100100101010100010100000100100010100101001000100011010101001010101000101000100010001000101010011";
 
-// static int obstacle_course_starting_x = OBSTACLE_COURSE_STARTING_X;
-
-static float obstacle_course_x = OBSTACLE_COURSE_STARTING_X;
+static char* bonus_course_copy = NULL;
 
 static uint8_t *obstacle_pixels = NULL;
 static int obstacle_w = 0;
 static int obstacle_h = 0;
+static float obstacle_course_x = OBSTACLE_COURSE_STARTING_X;
 static float obstacle_course_movement_speed = OBSTACLE_COURSE_MOVEMENT_SPEED;
 
 static uint8_t *bonus_pixels = NULL;
 static int bonus_w = 0;
 static int bonus_h = 0;
-static float bonus_course_movement_speed = OBSTACLE_COURSE_MOVEMENT_SPEED;
+static float bonus_course_x = BONUS_COURSE_STARTING_X;
+static float bonus_course_movement_speed = BONUS_COURSE_MOVEMENT_SPEED;
 
 static int game_score = 0;
 static int high_score = 0;
@@ -70,6 +72,14 @@ void set_bonus_texture(uint8_t *pixels, int w, int h)
     bonus_h = h;
 }
 
+void init_bonus_course_copy(void)
+{
+    bonus_course_copy = strdup(bonus_course);
+    if (!bonus_course_copy) {
+        // handle error
+    }
+}
+
 EMSCRIPTEN_KEEPALIVE
 int reset_game(void)
 {
@@ -78,11 +88,14 @@ int reset_game(void)
     player_active_jump = 0;
     player_active_jump_up = 0;
     player_vel_y = 0.0f;
-    obstacle_course_x = (float)OBSTACLE_COURSE_STARTING_X;
+    obstacle_course_x = OBSTACLE_COURSE_STARTING_X;
+    bonus_course_x = BONUS_COURSE_STARTING_X;
     game_state = GAME_ACTIVE;
     high_score = game_score;
     game_score = 0;
     obstacle_course_movement_speed = OBSTACLE_COURSE_MOVEMENT_SPEED;
+    bonus_course_movement_speed = BONUS_COURSE_MOVEMENT_SPEED;
+    init_bonus_course_copy();
     return 0;
 }
 
@@ -96,7 +109,7 @@ int get_game_over(void) {
     return game_state == GAME_OVER;
 }
 
-void update_collisions(void) {
+void update_obstacle_collisions(void) {
     float ox = obstacle_course_x;
     char *p = obstacle_course;
 
@@ -113,6 +126,74 @@ void update_collisions(void) {
     }
 }
 
+void update_bonus_collisions(void) {
+    float ox = bonus_course_x;
+    char *p = bonus_course_copy;
+
+    if (!p)
+        return; // allocation failed
+
+    while (*p && ox < FRAMEBUFFER_WIDTH) {
+        if (*p >= '1') {
+            if (aabb_overlap(player_pos_x, player_pos_y, player_size, player_size,
+                             ox, BONUS_Y_BASE_POSITION,
+                             BONUS_BASE_SIZE, BONUS_BASE_SIZE)) {
+                game_score += BONUS_BASE_VALUE;
+                *p = '0';
+                }
+            }
+        ox += BONUS_COURSE_BASE_WIDTH;
+        p++;
+    }
+}
+
+void    render_bonus(int x_position, int y_position)
+{
+    const int size = BONUS_BASE_SIZE;
+    if (bonus_pixels && bonus_w > 0 && bonus_h > 0) {
+        for (int y = 0; y < size; y++) {
+            int py = y_position + y;
+            if (py < 0 || py >= FRAMEBUFFER_HEIGHT) {
+                continue;
+            }
+            int sy = (y * bonus_h) / size;
+            for (int x = 0; x < size; x++) {
+                int px = x_position + x;
+                if (px < 0 || px >= FRAMEBUFFER_WIDTH) {
+                    continue;
+                }
+                int sx = (x * bonus_w) / size;
+                int si = (sy * bonus_w + sx) * 4;
+                uint8_t r = bonus_pixels[si + 0];
+                uint8_t g = bonus_pixels[si + 1];
+                uint8_t b = bonus_pixels[si + 2];
+                uint8_t a = bonus_pixels[si + 3];
+                if (a == 0)
+                     continue;
+                framebuffer[py * FRAMEBUFFER_WIDTH + px] = pack_rgba(r, g, b, a);
+            }
+        }
+    }
+}
+
+void    render_bonus_course(void)
+{
+    float bonus_x_position = bonus_course_x;
+    // process the bonus course string and render the obstacles
+    char *bonus_course_ptr = bonus_course_copy;
+    while (*bonus_course_ptr != '\0' && bonus_x_position < FRAMEBUFFER_WIDTH)
+    {
+        if (*bonus_course_ptr >= '1')
+        {
+            if (bonus_x_position < -BONUS_BASE_SIZE)
+                ;
+            else
+                render_bonus(bonus_x_position, BONUS_Y_BASE_POSITION);
+        }
+        bonus_x_position += BONUS_COURSE_BASE_WIDTH;
+        bonus_course_ptr++;
+    }
+}
 
 void    render_obstacle(int x_position, int y_position)
 {
@@ -194,11 +275,11 @@ void update_player_position(float dt)
         player_active_jump = 0;
     }
 }
-void update_score(void)
-{
-    if (obstacle_course_x + OBSTACLE_BASE_SIZE < player_pos_x)
-        game_score += 1;
-}
+// void update_score(int value)
+// {
+//     if (obstacle_course_x + OBSTACLE_BASE_SIZE < player_pos_x)
+//         game_score += value;
+// }
 
 EMSCRIPTEN_KEEPALIVE
 void game_step(float dt)
@@ -206,53 +287,63 @@ void game_step(float dt)
     static int once = 0;
     if (!once) {
         once = 1;
-        puts("HELLO FROM C");
+        reset_game();
+        // puts("HELLO FROM C");
+        // init_bonus_course_copy();
     }
     
     if (game_state == GAME_OVER)
         return ;
 
-    update_score();
+    if (obstacle_course_x + OBSTACLE_BASE_SIZE < player_pos_x)
+        game_score += 1;
 
     if (dt < 0.0f) {
         dt = 0.0f;
     }
 
-    obstacle_course_movement_speed += (game_score / 400) * 1.5f * dt;
+    float speed_factor;
+    if (obstacle_course_x < 0) {
+        speed_factor = (fabs(obstacle_course_x) / FRAMEBUFFER_WIDTH);
+    }
+
+    obstacle_course_movement_speed += speed_factor * dt;
     obstacle_course_x -= obstacle_course_movement_speed * dt;
 
+    bonus_course_movement_speed += speed_factor * dt;
+    bonus_course_x -= bonus_course_movement_speed * dt;
+
+    // clear the framebuffer
     // if (!cleared) {
-        for (int y = 0; y < FRAMEBUFFER_HEIGHT; y++) {
-            for (int x = 0; x < FRAMEBUFFER_WIDTH; x++) {
-                framebuffer[y * FRAMEBUFFER_WIDTH + x] =
-                    (uint32_t)(0 | (0 << 8) | (0 << 16) | (255 << 24));
-            }
+    for (int y = 0; y < FRAMEBUFFER_HEIGHT; y++) {
+        for (int x = 0; x < FRAMEBUFFER_WIDTH; x++) {
+            framebuffer[y * FRAMEBUFFER_WIDTH + x] =
+                pack_rgba(0, 0, 0, 255);
         }
+    }
     //     cleared = 1;
     // }
-
-    int max_size = (FRAMEBUFFER_WIDTH < FRAMEBUFFER_HEIGHT) ? FRAMEBUFFER_WIDTH : FRAMEBUFFER_HEIGHT;
-    int size = player_size;
-    if (size > max_size) {
-        size = max_size;
-    }
     
-    int x0 = player_pos_x;
-    int y0 = player_pos_y;
-    if (x0 < 0) x0 = 0;
-    if (y0 < 0) y0 = 0;
-    if (x0 + size > FRAMEBUFFER_WIDTH) x0 = FRAMEBUFFER_WIDTH - size;
-    if (y0 + size > FRAMEBUFFER_HEIGHT) y0 = FRAMEBUFFER_HEIGHT - size;
-    uint32_t color =
-        (uint32_t)(current_r | (current_g << 8) | (current_b << 16) | (current_a << 24));
+    // int x0 = player_pos_x;
+    // int y0 = player_pos_y;
+    // if (x0 < 0) x0 = 0;=
+    // if (y0 < 0) y0 = 0;
+    // if (x0 + size > FRAMEBUFFER_WIDTH) x0 = FRAMEBUFFER_WIDTH - size;
+    // if (y0 + size > FRAMEBUFFER_HEIGHT) y0 = FRAMEBUFFER_HEIGHT - size;
+    // uint32_t color =
+    //     (uint32_t)(current_r | (current_g << 8) | (current_b << 16) | (current_a << 24));
 
-    draw_sky(framebuffer);
+    update_player_position(dt);
 
-    draw_ground(framebuffer);
+    draw_sky1(framebuffer, dt);
+    draw_sky2(framebuffer, dt);
+    draw_ground(framebuffer, dt);
        
     render_obstacle_course();
-    update_player_position(dt);
-    update_collisions();
+    update_obstacle_collisions();
+    
+    render_bonus_course();
+    update_bonus_collisions();
 }
 
 EMSCRIPTEN_KEEPALIVE
@@ -336,6 +427,7 @@ void move_rect(int dx, int dy)
     if (player_pos_x + size > FRAMEBUFFER_WIDTH) player_pos_x = FRAMEBUFFER_WIDTH - size;
     if (player_pos_y + size > FRAMEBUFFER_HEIGHT) player_pos_y = FRAMEBUFFER_HEIGHT - size;
 }
+
 
 EMSCRIPTEN_KEEPALIVE
 int get_player_x(void)
