@@ -17,6 +17,8 @@ typedef enum {
     GAME_OVER
 } e_game_state;
 
+static t_texture player_tex;
+
 static e_game_state game_state = GAME_PAUSED;
 
 static uint8_t current_r = 255;
@@ -61,6 +63,36 @@ static int game_over_triggered = 0;
 
 static float speed_factor = 0.0f;
 
+static int player_current_frame = 0;
+
+
+
+void set_player_texture(uint8_t *data, int w, int h)
+{
+    player_tex.pixels = data;
+    player_tex.width = w;
+    player_tex.height = h;
+
+    player_tex.frame_count = 3;
+    player_tex.frame_width = w / player_tex.frame_count;
+    player_tex.frame_height = h;
+
+    player_tex.current_frame = 0;
+    player_tex.frame_time = 0.0f;
+    player_tex.frame_duration = 0.1f;
+}
+
+void update_player_animation(float dt)
+{
+    player_tex.frame_time += dt;
+
+    if (player_tex.frame_time >= player_tex.frame_duration)
+    {
+        player_tex.frame_time = 0.0f;
+        player_tex.current_frame =
+            (player_tex.current_frame + 1) % player_tex.frame_count;
+    }
+}
 
 EMSCRIPTEN_KEEPALIVE
 void set_obstacle_texture(uint8_t *pixels, int w, int h)
@@ -101,6 +133,8 @@ int reset_game(void)
     game_score = 0;
     high_score = game_score;
     game_time = 0.0f;
+
+    player_current_frame = 0;
 
     speed_factor = 0.0f;
     bonus_collected = 0;
@@ -165,6 +199,7 @@ void update_obstacle_collisions(void) {
                              ox, OBSTACLE_Y_BASE_POSITION,
                              OBSTACLE_BASE_SIZE, OBSTACLE_BASE_SIZE)) {
                 game_state = GAME_OVER;
+                player_current_frame = 1;
                 game_over_triggered = 1;
                 }
             }
@@ -263,6 +298,8 @@ void    render_obstacle(int x_position, int y_position)
                 uint8_t g = obstacle_pixels[si + 1];
                 uint8_t b = obstacle_pixels[si + 2];
                 uint8_t a = obstacle_pixels[si + 3];
+                if (a == 0)
+                    continue;
                 framebuffer[py * FRAMEBUFFER_WIDTH + px] = pack_rgba(r, g, b, a);
             }
         }
@@ -320,6 +357,7 @@ void update_player_position(float dt)
         player_pos_y = PLAYER_Y_BASE_POSITION;
         player_vel_y = 0.0f;
         player_active_jump = 0;
+        player_current_frame = 0;
     }
 }
 // void update_score(int value)
@@ -327,6 +365,12 @@ void update_player_position(float dt)
 //     if (obstacle_course_x + OBSTACLE_BASE_SIZE < player_pos_x)
 //         game_score += value;
 // }
+
+void draw_player(int x, int y, int size)
+{
+    render_sprite_frame(&player_tex, player_size, player_size, player_pos_x, player_pos_y, player_current_frame, framebuffer);
+}
+
 
 EMSCRIPTEN_KEEPALIVE
 void game_step(float dt)
@@ -354,8 +398,8 @@ void game_step(float dt)
     if (obstacle_course_x < 0) {
         speed_factor = (float)(fabs(obstacle_course_x) / FRAMEBUFFER_WIDTH);
     }
-    if (speed_factor > 6.0f)
-        speed_factor = 6.0f;
+    if (speed_factor > MAX_SPEED_FACTOR)
+        speed_factor = MAX_SPEED_FACTOR;
 
     obstacle_course_movement_speed += speed_factor * dt;
     obstacle_course_x -= obstacle_course_movement_speed * dt;
@@ -383,6 +427,7 @@ void game_step(float dt)
     // uint32_t color =
     //     (uint32_t)(current_r | (current_g << 8) | (current_b << 16) | (current_a << 24));
 
+    update_player_animation(dt);
     update_player_position(dt);
 
     draw_sky1(framebuffer, dt);
@@ -394,6 +439,9 @@ void game_step(float dt)
     
     render_bonus_course();
     update_bonus_collisions();
+
+    draw_player(0, 0, player_size);
+
 }
 
 EMSCRIPTEN_KEEPALIVE
@@ -439,6 +487,7 @@ void player_up(void)
     player_active_jump_up = 1;
     player_vel_y = -JUMP_VELOCITY;
     jump_triggered = 1;
+    player_current_frame = 2;
 }
 
 EMSCRIPTEN_KEEPALIVE

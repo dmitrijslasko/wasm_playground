@@ -32,6 +32,7 @@ void set_sky_texture2(uint8_t *pixels, int w, int h)
     sky2_w = w;
     sky2_h = h;
 }
+
 EMSCRIPTEN_KEEPALIVE
 void draw_sky1(uint32_t *framebuffer, float dt)
 {
