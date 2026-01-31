@@ -143,6 +143,18 @@ int get_game_over_triggered(void) {
     return value;
 }
 
+int get_bonus_y_position(char *p) {
+    if (*p == '1')
+        return BONUS_Y_BASE_POSITION;
+    else if (*p == '2')
+        return BONUS_Y_BASE_POSITION + 50;
+    else if (*p == '3')
+        return BONUS_Y_BASE_POSITION + 100;
+    else if (*p == '4')
+        return BONUS_Y_BASE_POSITION + 150;
+    return BONUS_Y_BASE_POSITION;
+}
+
 void update_obstacle_collisions(void) {
     float ox = obstacle_course_x;
     char *p = obstacle_course;
@@ -171,7 +183,7 @@ void update_bonus_collisions(void) {
     while (*p && ox < FRAMEBUFFER_WIDTH) {
         if (*p >= '1') {
             if (aabb_overlap(player_pos_x, player_pos_y, player_size, player_size,
-                             ox, BONUS_Y_BASE_POSITION,
+                             ox, get_bonus_y_position(p),
                              BONUS_BASE_SIZE, BONUS_BASE_SIZE)) {
                 game_score += BONUS_BASE_VALUE;
                 speed_factor = 0.0f;
@@ -223,16 +235,8 @@ void    render_bonus_course(void)
     {
         if (bonus_x_position < -BONUS_BASE_SIZE)
             ;
-        else if (*bonus_course_ptr >= '1') {
-            if (*bonus_course_ptr == '1')
-                render_bonus(bonus_x_position, 350);
-            else if (*bonus_course_ptr == '2')
-                render_bonus(bonus_x_position, 200);
-            else if (*bonus_course_ptr == '3')
-                render_bonus(bonus_x_position, 150);
-            else if (*bonus_course_ptr == '4')
-                render_bonus(bonus_x_position, 100);
-            }
+        else if (*bonus_course_ptr >= '1')
+                render_bonus(bonus_x_position, get_bonus_y_position(bonus_course_ptr));
         bonus_x_position += BONUS_COURSE_BASE_WIDTH;
         bonus_course_ptr++;
     }
@@ -386,7 +390,7 @@ void game_step(float dt)
     draw_ground(framebuffer, dt);
        
     render_obstacle_course();
-    update_obstacle_collisions();
+    // update_obstacle_collisions();
     
     render_bonus_course();
     update_bonus_collisions();
