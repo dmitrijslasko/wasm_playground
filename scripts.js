@@ -4,7 +4,7 @@ let groundTexturePath = "assets/ground.png";
 let obstacleTexturePath = "assets/obstacle.png";
 let bonusTexturePath = "assets/coin.png";
 
-let playerTexturePath = "assets/player.png";
+let playerTexturePath = "assets/player-sprite.png";
 
 // Define Module BEFORE loading demo.js
 var Module = {
@@ -35,17 +35,17 @@ function initAudio() {
   }
 }
 
-function loadPlayerTexture() {
-  const img = new Image();
-  img.src = playerTexturePath;
-  img.onload = () => {
-	playerTexture = img;
-	playerTextureReady = true;
-  };
-  img.onerror = () => {
-	playerTextureReady = false;
-  };
-}
+// function loadPlayerTexture() {
+//   const img = new Image();
+//   img.src = playerTexturePath;
+//   img.onload = () => {
+// 	playerTexture = img;
+// 	playerTextureReady = true;
+//   };
+//   img.onerror = () => {
+// 	playerTextureReady = false;
+//   };
+// }
 
 function loadSound(path, key) {
   initAudio();
@@ -128,7 +128,6 @@ function loadTexture(texturePath, function_to_call) {
 function start() {
   console.log("WASM ready");
 
-  loadPlayerTexture();
   loadSound("assets/jump.m4a", "jump");
   loadSound("assets/bite.m4a", "bonus");
   loadSound("assets/game-over.m4a", "gameOver");
@@ -144,6 +143,7 @@ function start() {
 	  audioUnlocked = true;
 	}).catch(() => {});
   };
+
   document.addEventListener("pointerdown", unlockAudio, { once: true });
   document.addEventListener("touchstart", unlockAudio, { once: true, passive: true });
   document.addEventListener("keydown", enableAudio, { once: true });
@@ -173,6 +173,7 @@ function start() {
   const playerIsUp = Module.cwrap("player_up", null, []);
   const playerIsDown = Module.cwrap("player_down", null, []);
 
+
   const resetGame = Module.cwrap("reset_game", null, []);
   const getGameScore = Module.cwrap("get_game_score", "number", []);
   const getGameOver = Module.cwrap("get_game_over", "number", []);
@@ -185,6 +186,7 @@ function start() {
   const getPlayerY = Module.cwrap("get_player_y", "number", []);
   const getPlayerSize = Module.cwrap("get_player_size", "number", []);
 
+  const setPlayerTexture = Module.cwrap("set_player_texture", null, ["number", "number", "number"]);
   const setSkyTexture1 = Module.cwrap("set_sky_texture1", null, ["number", "number", "number"]);
   const setSkyTexture2 = Module.cwrap("set_sky_texture2", null, ["number", "number", "number"]);
 
@@ -192,6 +194,7 @@ function start() {
   const setObstacleTexture = Module.cwrap("set_obstacle_texture", null, ["number", "number", "number"]);
   const setBonusTexture = Module.cwrap("set_bonus_texture", null, ["number", "number", "number"]);
 
+  loadTexture(playerTexturePath, setPlayerTexture);
   loadTexture(skyTexture1Path, setSkyTexture1);
   loadTexture(skyTexture2Path, setSkyTexture2);
   loadTexture(groundTexturePath, setGroundTexture);
