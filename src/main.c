@@ -34,8 +34,8 @@ static int player_active_jump = 0;
 static int player_active_jump_up = 0;
 static float player_vel_y = 0.0f;
 
-static char* obstacle_course = "10101001010001010001000100010010101001010100101001010000010010010010000010010010101010101010100101010101010101010100010101010101010001";
-static char* bonus_course =    "00200102032011002100012000010103201001010010013101010001010000010014001010010100100010021103010200401010100010100010001000000101010011";
+static char* obstacle_course = "10201001010001010001000100010010101001010100101001010000010010010010000010010010101010101010100101010101010101010100010101010101010001";
+static char* bonus_course =    "111110102032011002100012000010103201001010010013101010001010000010014001010010100100010021103010200401010100010100010001000000101010011";
 
 static char* bonus_course_copy = NULL;
 
@@ -53,11 +53,13 @@ static float bonus_course_movement_speed = BONUS_COURSE_MOVEMENT_SPEED;
 
 static int game_score = 0;
 static int high_score = 0;
+static float game_time = 0.0f;
 
 static int bonus_collected = 0;
 static int jump_triggered = 0;
 static int game_over_triggered = 0;
 
+static float speed_factor = 0.0f;
 
 
 EMSCRIPTEN_KEEPALIVE
@@ -95,8 +97,12 @@ int reset_game(void)
     obstacle_course_x = OBSTACLE_COURSE_STARTING_X;
     bonus_course_x = BONUS_COURSE_STARTING_X;
     game_state = GAME_ACTIVE;
-    high_score = game_score;
+
     game_score = 0;
+    high_score = game_score;
+    game_time = 0.0f;
+
+    speed_factor = 0.0f;
     bonus_collected = 0;
     jump_triggered = 0;
     game_over_triggered = 0;
@@ -108,7 +114,7 @@ int reset_game(void)
 
 EMSCRIPTEN_KEEPALIVE
 int get_game_score(void) {
-    return game_score;
+    return game_time;
 }
 
 EMSCRIPTEN_KEEPALIVE
@@ -168,6 +174,8 @@ void update_bonus_collisions(void) {
                              ox, BONUS_Y_BASE_POSITION,
                              BONUS_BASE_SIZE, BONUS_BASE_SIZE)) {
                 game_score += BONUS_BASE_VALUE;
+                speed_factor = 0.0f;
+                game_time += 1.0f;
                 *p = '0';
                 bonus_collected = 1;
                 }
@@ -217,7 +225,7 @@ void    render_bonus_course(void)
             ;
         else if (*bonus_course_ptr >= '1') {
             if (*bonus_course_ptr == '1')
-                render_bonus(bonus_x_position, 250);
+                render_bonus(bonus_x_position, 350);
             else if (*bonus_course_ptr == '2')
                 render_bonus(bonus_x_position, 200);
             else if (*bonus_course_ptr == '3')
@@ -331,16 +339,19 @@ void game_step(float dt)
         return ;
 
     if (obstacle_course_x + OBSTACLE_BASE_SIZE < player_pos_x)
-        game_score += 1;
+        game_score += 1 * (int)(speed_factor + 1.0f);
+    
+    game_time += dt;
 
     if (dt < 0.0f) {
         dt = 0.0f;
     }
 
-    float speed_factor;
     if (obstacle_course_x < 0) {
-        speed_factor = (fabs(obstacle_course_x) / FRAMEBUFFER_WIDTH);
+        speed_factor = (float)(fabs(obstacle_course_x) / FRAMEBUFFER_WIDTH);
     }
+    if (speed_factor > 6.0f)
+        speed_factor = 6.0f;
 
     obstacle_course_movement_speed += speed_factor * dt;
     obstacle_course_x -= obstacle_course_movement_speed * dt;
@@ -481,4 +492,10 @@ EMSCRIPTEN_KEEPALIVE
 int get_player_size(void)
 {
     return player_size;
+}
+
+EMSCRIPTEN_KEEPALIVE
+float get_speed(void)
+{
+    return speed_factor;
 }

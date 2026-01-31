@@ -1,5 +1,5 @@
-let skyTexture1Path = "assets/pixel-sky-1.png";
-let skyTexture2Path = "assets/pixel-sky-2.png";
+let skyTexture1Path = "assets/pixel-sky-1.webp";
+let skyTexture2Path = "assets/pixel-sky-2.webp";
 let groundTexturePath = "assets/ground.png";
 let obstacleTexturePath = "assets/obstacle.png";
 let bonusTexturePath = "assets/coin.png";
@@ -34,25 +34,6 @@ function initAudio() {
 	audioContext.resume().catch(() => {});
   }
 }
-
-function unlockAudioFromGesture() {
-	if (audioUnlocked) return;
-  
-	const AudioCtx = window.AudioContext || window.webkitAudioContext;
-	if (!audioContext) {
-	  audioContext = new AudioCtx();
-	}
-  
-	// Synchronous silent buffer (required for iOS)
-	const buffer = audioContext.createBuffer(1, 1, audioContext.sampleRate);
-	const source = audioContext.createBufferSource();
-	source.buffer = buffer;
-	source.connect(audioContext.destination);
-	source.start(0);
-  
-	audioUnlocked = true;
-  }
-  
 
 function loadPlayerTexture() {
   const img = new Image();
@@ -172,7 +153,7 @@ function start() {
   const scoreEl = document.getElementById("score");
   const gameOverEl = document.getElementById("game-over-screen");
   const highScoreEl = document.getElementById("high-score");
-
+  const speedValueEl = document.getElementById("speed-value");
   // MUST match canvas width/height
   const W = canvas.width;
   const H = canvas.height;
@@ -195,6 +176,8 @@ function start() {
   const resetGame = Module.cwrap("reset_game", null, []);
   const getGameScore = Module.cwrap("get_game_score", "number", []);
   const getGameOver = Module.cwrap("get_game_over", "number", []);
+  const getSpeed = Module.cwrap("get_speed", "number", []);
+  
   const getBonusCollected = Module.cwrap("get_bonus_collected", "number", []);
   const getJumpTriggered = Module.cwrap("get_jump_triggered", "number", []);
   const getGameOverTriggered = Module.cwrap("get_game_over_triggered", "number", []);
@@ -285,6 +268,12 @@ function start() {
 		lastGameOver = isGameOver;
 	  }
 	}
+
+	if (speedValueEl) {
+	  const speed = getSpeed() + 1.0;
+	  speedValueEl.textContent = speed.toFixed(2);
+	}
+
 	if (getBonusCollected() === 1) {
 	  playBonusSound();
 	}
