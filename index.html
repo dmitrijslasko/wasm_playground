@@ -9,13 +9,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">  
   <link rel="stylesheet" href="styles.css">
 
-  <title>Bunny Hopper</title>
+  <title>Pixel Runner - Wolt</title>
   </style>
 </head>
 <body>
 
   <!-- MUST match your C WIDTH/HEIGHT -->
-  <canvas id="game" width="960" height="600"></canvas>
+  <div id="loading">Loading…</div>
+  <canvas id="game" width="1920" height="1080"></canvas>
   <!-- <div class="instructions">arrows - to move; +/- to increase the square</div> -->
   <div class="rotate-overlay">Rotate your device to landscape to play.</div>
   <div class="joystick" id="joystick" aria-label="movement joystick">
@@ -24,7 +25,7 @@
   <button id="reset-button" data-action="reset" aria-label="reset">RESET</button>
   <div class="actions" aria-label="size controls">
     <button data-action="grow" aria-label="grow">↑</button>
-    <button data-action="shrink" aria-label="shrink">↓</button>
+    <!-- <button data-action="shrink" aria-label="shrink">↓</button> -->
   </div>
   
   <div id="scoreboard">

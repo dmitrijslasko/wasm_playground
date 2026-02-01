@@ -53,6 +53,19 @@ canvas {
 
 }
 
+#loading {
+	position: fixed;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-family: 'Press Start 2P', system-ui, sans-serif;
+	font-size: 4vh;
+	color: #fff;
+	background: rgba(0, 0, 0, 1);
+	z-index: 20;
+}
+
 #scoreboard {
 	position: absolute;
 	top: 22px;
@@ -66,18 +79,12 @@ canvas {
 	border-radius: 6px;
 	background: rgba(0, 0, 0, 0.0);
 	pointer-events: none;
-		/* fake stroke */
-			text-shadow:
-			-6px -6px 0 #000,
-			6px -6px 0 #000,
-			-6px  6px 0 #000,
-			6px  6px 0 #000;
 }
 
 #high-scoreboard {
 	position: absolute;
 	top: 18px;
-	left: 10%;
+	left: 5%;
 	color: #fff;
 	font-family: 'Press Start 2P', system-ui, sans-serif;
 	padding: 8px 10px;
@@ -89,7 +96,7 @@ canvas {
 #speed-board {
 	position: absolute;
 	top: 18px;
-	left: 30%;
+	left: 25%;
 	color: #fff;
 	font-family: 'Press Start 2P', system-ui, sans-serif;
 	padding: 8px 10px;
@@ -124,11 +131,6 @@ canvas {
 	background: rgba(0, 0, 0, 0.0);
 	pointer-events: none;
 	display: none;
-	text-shadow:
-	-6px -6px 0 #000,
-	 6px -6px 0 #000,
-	-6px  6px 0 #000,
-	 6px  6px 0 #000;
 }
 
 .instructions {
@@ -144,7 +146,7 @@ canvas {
 
 .joystick {
 	position: absolute;
-	bottom: 48px;
+	bottom: 32px;
 	left: 16px;
 	width: 150px;
 	height: 150px;
@@ -179,7 +181,7 @@ canvas {
 
 .actions {
 	position: absolute;
-	bottom: 48px;
+	bottom: 32px;
 	right: 16px;
 	display: grid;
 	grid-template-columns: 56px 56px;
@@ -192,13 +194,13 @@ canvas {
 }
 
 .actions button {
-	width: 56px;
-	height: 56px;
+	width: 150px;
+	height: 150px;
 	border: 0;
-	border-radius: 10px;
-	background: rgba(34, 34, 34, 0.9);
+	border-radius: 50%;
+	background: rgba(34, 34, 34, 0.2);
 	color: #eee;
-	font: 24px/1 system-ui, sans-serif;
+	font: 32px/1 system-ui, sans-serif;
 
 	user-select: none;
 	touch-action: manipulation;
@@ -209,10 +211,10 @@ canvas {
 #reset-button {
 	position: absolute;
 	top: 36px;
-	right: 60px;
+	right: 80px;
 	width: auto;
 	text-align: center;
-	background-color: darkslateblue;
+	background-color: darkblue;
 	color: white;
 	font-size: 4vh;
 	font-weight: 400;
@@ -224,7 +226,7 @@ canvas {
 }
 
 #reset-button:hover {
-	transform: scale(1.2); /* (150% zoom - Note: if the zoom is too large, it will go outside of the viewport) */
+	transform: scale(1.1); /* (150% zoom - Note: if the zoom is too large, it will go outside of the viewport) */
 }
 
 .rotate-overlay {

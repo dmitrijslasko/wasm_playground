@@ -1,10 +1,19 @@
-let skyTexture1Path = "assets/pixel-sky-1.webp";
-let skyTexture2Path = "assets/pixel-sky-2.webp";
-let groundTexturePath = "assets/ground.png";
-let obstacleTexturePath = "assets/obstacle.png";
-let bonusTexturePath = "assets/coin.png";
+let skyTexture1Path = "assets/wolt/sky.png";
+let skyTexture2Path = "assets/wolt/skyline.png";
+let skyTexture3Path = "assets/wolt/clouds.png";
 
-let playerTexturePath = "assets/player-sprite.png";
+let groundTexturePath = "assets/wolt/ground.webp";
+let groundTexture2Path = "assets/wolt/bushes.webp";
+let obstacleTexturePath = "assets/wolt/paper_bag.webp";
+let bonusTexturePath = "assets/wolt/cake.webp";
+
+let playerTexturePath = "assets/wolt/deer-sprite.webp";
+
+let jumpSoundPath = "assets/sounds/jump.m4a";
+let bonusSoundPath = "assets/sounds/bite.m4a";
+let gameOverSoundPath = "assets/sounds/game-over.m4a";
+
+let joystickSensitivy = 200;
 
 // Define Module BEFORE loading demo.js
 var Module = {
@@ -16,7 +25,7 @@ var Module = {
 let skyTexture1 = null;
 let skyTexture2 = null;
 let skyTexture1Ready = false;
-let skyTexture2Ready = false;
+let skyTexture2Ready = false; 
 
 let playerTexture = null;
 let playerTextureReady = false;
@@ -48,16 +57,27 @@ function initAudio() {
 // }
 
 function loadSound(path, key) {
-  initAudio();
-  if (!audioContext) return;
-  fetch(path)
-	.then((res) => res.arrayBuffer())
-	.then((data) => audioContext.decodeAudioData(data))
-	.then((buffer) => {
-	  audioBuffers[key] = buffer;
-	})
-	.catch(() => {});
-}
+	return new Promise((resolve, reject) => {
+	  initAudio();
+	  if (!audioContext) {
+		resolve(); // audio optional
+		return;
+	  }
+  
+	  fetch(path)
+		.then(res => res.arrayBuffer())
+		.then(data => audioContext.decodeAudioData(data))
+		.then(buffer => {
+		  audioBuffers[key] = buffer;
+		  resolve();
+		})
+		.catch(err => {
+		  console.warn("Audio load failed:", path);
+		  resolve(); // don't block game on audio
+		});
+	});
+  }
+  
 
 function playSound(key) {
   if (!audioContext) return;
@@ -98,39 +118,45 @@ function playGameOverSound() {
   playSound("gameOver");
 }
 
-function loadTexture(texturePath, function_to_call) {
-	const img = new Image();
-	img.src = texturePath;
-	img.onload = () => {
-	  const tmp = document.createElement("canvas");
-	  tmp.width = img.width;
-	  tmp.height = img.height;
+function loadTexture(texturePath, functionToCall) {
+	return new Promise((resolve, reject) => {
+	  const img = new Image();
+	  img.src = texturePath;
   
-	  const tctx = tmp.getContext("2d");
-	  tctx.drawImage(img, 0, 0);
+	  img.onload = () => {
+		const tmp = document.createElement("canvas");
+		tmp.width = img.width;
+		tmp.height = img.height;
   
-	  const imgData = tctx.getImageData(0, 0, img.width, img.height);
-	  const size = imgData.data.length;
-	  const ptr = Module._malloc(size);
-	  try {
-		const heap = Module.HEAPU8 || HEAPU8;
-		heap.set(imgData.data, ptr);
-		function_to_call(ptr, img.width, img.height);
-	  } catch (err) {
-		console.error("Failed to upload sky texture:", err);
-	  }
-	};
-	img.onerror = () => {
-	  console.warn(`Failed to load ${texturePath}`);
-	};
+		const tctx = tmp.getContext("2d");
+		tctx.drawImage(img, 0, 0);
+  
+		const imgData = tctx.getImageData(0, 0, img.width, img.height);
+		const size = imgData.data.length;
+		const ptr = Module._malloc(size);
+  
+		try {
+		  const heap = Module.HEAPU8 || HEAPU8;
+		  heap.set(imgData.data, ptr);
+		  functionToCall(ptr, img.width, img.height);
+		  resolve();
+		} catch (err) {
+		  reject(err);
+		}
+	  };
+  
+	  img.onerror = () => reject(new Error(`Failed to load ${texturePath}`));
+	});
   }
-  
-function start() {
+
+
+
+async function start() {
   console.log("WASM ready");
 
-  loadSound("assets/jump.m4a", "jump");
-  loadSound("assets/bite.m4a", "bonus");
-  loadSound("assets/game-over.m4a", "gameOver");
+  loadSound(jumpSoundPath, "jump");
+  loadSound(bonusSoundPath, "bonus");
+  loadSound(gameOverSoundPath, "gameOver");
 
   const enableAudio = () => initAudio();
   const unlockAudio = () => {
@@ -150,60 +176,76 @@ function start() {
 
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d", { alpha: false });
+  const loadingEl = document.getElementById("loading");
   const scoreEl = document.getElementById("score");
   const gameOverEl = document.getElementById("game-over-screen");
   const highScoreEl = document.getElementById("high-score");
   const speedValueEl = document.getElementById("speed-value");
-  // MUST match canvas width/height
+
   const W = canvas.width;
   const H = canvas.height;
 
   const img = ctx.createImageData(W, H);
 
+  // functions to call from the WASM module
   const gameStep = Module.cwrap("game_step", null, ["number"]);
   const getFramebuffer = Module.cwrap("get_framebuffer", "number");
-
   const setColor = Module.cwrap("set_color", null, ["number", "number", "number", "number"]);
   const growRect = Module.cwrap("grow_rect", null, []);
   const shrinkRect = Module.cwrap("shrink_rect", null, []);
-
   const moveRect = Module.cwrap("move_rect", null, ["number", "number"]);
-
-
   const playerIsUp = Module.cwrap("player_up", null, []);
   const playerIsDown = Module.cwrap("player_down", null, []);
-
-
   const resetGame = Module.cwrap("reset_game", null, []);
   const getGameScore = Module.cwrap("get_game_score", "number", []);
-  const getGameOver = Module.cwrap("get_game_over", "number", []);
+  const getGameStatus = Module.cwrap("get_game_status", "number", []);
   const getSpeed = Module.cwrap("get_speed", "number", []);
-  
   const getBonusCollected = Module.cwrap("get_bonus_collected", "number", []);
   const getJumpTriggered = Module.cwrap("get_jump_triggered", "number", []);
   const getGameOverTriggered = Module.cwrap("get_game_over_triggered", "number", []);
+
   const getPlayerX = Module.cwrap("get_player_x", "number", []);
   const getPlayerY = Module.cwrap("get_player_y", "number", []);
   const getPlayerSize = Module.cwrap("get_player_size", "number", []);
-
   const setPlayerTexture = Module.cwrap("set_player_texture", null, ["number", "number", "number"]);
+
   const setSkyTexture1 = Module.cwrap("set_sky_texture1", null, ["number", "number", "number"]);
   const setSkyTexture2 = Module.cwrap("set_sky_texture2", null, ["number", "number", "number"]);
+  const setSkyTexture3 = Module.cwrap("set_sky_texture3", null, ["number", "number", "number"]);
 
   const setGroundTexture = Module.cwrap("set_ground_texture", null, ["number", "number", "number"]);
+  const setGroundTexture2 = Module.cwrap("set_ground_texture2", null, ["number", "number", "number"]);
+
   const setObstacleTexture = Module.cwrap("set_obstacle_texture", null, ["number", "number", "number"]);
   const setBonusTexture = Module.cwrap("set_bonus_texture", null, ["number", "number", "number"]);
 
-  loadTexture(playerTexturePath, setPlayerTexture);
-  loadTexture(skyTexture1Path, setSkyTexture1);
-  loadTexture(skyTexture2Path, setSkyTexture2);
-  loadTexture(groundTexturePath, setGroundTexture);
-  loadTexture(obstacleTexturePath, setObstacleTexture);
-  loadTexture(bonusTexturePath, setBonusTexture);
+  console.log("Loading assets...");
+  if (loadingEl) {
+	loadingEl.style.display = "flex";
+  }
+  const assetPromises = [
+	loadTexture(playerTexturePath, setPlayerTexture),
+	loadTexture(skyTexture1Path, setSkyTexture1),
+	loadTexture(skyTexture2Path, setSkyTexture2),
+	loadTexture(skyTexture3Path, setSkyTexture3),
+	loadTexture(groundTexturePath, setGroundTexture),
+	loadTexture(groundTexture2Path, setGroundTexture2),
+	loadTexture(obstacleTexturePath, setObstacleTexture),
+	loadTexture(bonusTexturePath, setBonusTexture),
+
+	loadSound("assets/jump.m4a", "jump"),
+	loadSound("assets/bite.m4a", "bonus"),
+	loadSound("assets/game-over.m4a", "gameOver"),
+  ];
+  await Promise.all(assetPromises);
+  console.log("Assets ready");
+  if (loadingEl) {
+	loadingEl.style.display = "none";
+  }
 
   let last = performance.now();
   let lastScore = null;
-  let lastGameOver = null;
+  let lastGameStatus = null;
   let highScore = 0;
 
   // keys that are pressed right now
@@ -217,15 +259,13 @@ function start() {
 	if (dt > 0.05) dt = 0.05;
 
 	// this is the step size for the movement of the rect
-  const step = 200 * dt;
+  const step = joystickSensitivy * dt;
   if (joyX !== 0 || joyY !== 0) {
 	moveRect(joyX * step, joyY * step);
   }
 
 	if (keys.has("ArrowLeft")) moveRect(-step, 0);
 	if (keys.has("ArrowRight")) moveRect(step, 0);
-	// if (keys.has("ArrowUp")) moveRect(0, -step);
-	// if (keys.has("ArrowDown")) moveRect(0, step);
 
 	if (keys.has("ArrowUp")) playerIsUp();
 	if (keys.has("ArrowDown")) playerIsDown();
@@ -264,17 +304,30 @@ function start() {
 		highScoreEl.textContent = String(highScore);
 	  }
 	}
+
 	if (gameOverEl) {
-	  const isGameOver = getGameOver() === 1;
-	  if (isGameOver !== lastGameOver) {
-		gameOverEl.style.display = isGameOver ? "block" : "none";
-		lastGameOver = isGameOver;
+		const status = getGameStatus();
+
+		if (status !== lastGameStatus) {
+		  if (status === 2) {
+			gameOverEl.style.display = "block";
+			gameOverEl.textContent = "GAME WON";
+		  } 
+		  else if (status === -1) {
+			gameOverEl.style.display = "block";
+			gameOverEl.textContent = "GAME OVER";
+		  } 
+		  else {
+			gameOverEl.style.display = "none";
+		  }
+		
+		  lastGameStatus = status;
+		}
 	  }
-	}
 
 	if (speedValueEl) {
 	  const speed = getSpeed() + 1.0;
-	  speedValueEl.textContent = speed.toFixed(2);
+	  speedValueEl.textContent = speed.toFixed(0);
 	}
 
 	if (getBonusCollected() === 1) {
@@ -429,6 +482,9 @@ function start() {
 
   requestAnimationFrame(loop);
 }
+
+
+
 
 let lastTouchEnd = 0;
 
