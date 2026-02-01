@@ -1,11 +1,11 @@
 let skyTexture1Path = "assets/wolt/bg/sky.png";
 let skyTexture2Path = "assets/wolt/bg/clouds.png";
-let groundTexturePath = "assets/wolt/bg/ground.png";
-let groundTexture2Path = "assets/wolt/bg/bushes.png";
+let groundTexturePath = "assets/wolt/bg/ground.webp";
+let groundTexture2Path = "assets/wolt/bg/bushes.webp";
 let obstacleTexturePath = "assets/wolt/paper_bag.png";
 let bonusTexturePath = "assets/wolt/cake.png";
 
-let playerTexturePath = "assets/wolt/deer-sprite2.png";
+let playerTexturePath = "assets/wolt/bg/deer-sprite.webp";
 
 let joystickSensitivy = 200;
 
@@ -51,16 +51,27 @@ function initAudio() {
 // }
 
 function loadSound(path, key) {
-  initAudio();
-  if (!audioContext) return;
-  fetch(path)
-	.then((res) => res.arrayBuffer())
-	.then((data) => audioContext.decodeAudioData(data))
-	.then((buffer) => {
-	  audioBuffers[key] = buffer;
-	})
-	.catch(() => {});
-}
+	return new Promise((resolve, reject) => {
+	  initAudio();
+	  if (!audioContext) {
+		resolve(); // audio optional
+		return;
+	  }
+  
+	  fetch(path)
+		.then(res => res.arrayBuffer())
+		.then(data => audioContext.decodeAudioData(data))
+		.then(buffer => {
+		  audioBuffers[key] = buffer;
+		  resolve();
+		})
+		.catch(err => {
+		  console.warn("Audio load failed:", path);
+		  resolve(); // don't block game on audio
+		});
+	});
+  }
+  
 
 function playSound(key) {
   if (!audioContext) return;
@@ -101,35 +112,40 @@ function playGameOverSound() {
   playSound("gameOver");
 }
 
-function loadTexture(texturePath, function_to_call) {
-	
-	const img = new Image();
-	img.src = texturePath;
-	img.onload = () => {
-	  const tmp = document.createElement("canvas");
-	  tmp.width = img.width;
-	  tmp.height = img.height;
+function loadTexture(texturePath, functionToCall) {
+	return new Promise((resolve, reject) => {
+	  const img = new Image();
+	  img.src = texturePath;
   
-	  const tctx = tmp.getContext("2d");
-	  tctx.drawImage(img, 0, 0);
+	  img.onload = () => {
+		const tmp = document.createElement("canvas");
+		tmp.width = img.width;
+		tmp.height = img.height;
   
-	  const imgData = tctx.getImageData(0, 0, img.width, img.height);
-	  const size = imgData.data.length;
-	  const ptr = Module._malloc(size);
-	  try {
-		const heap = Module.HEAPU8 || HEAPU8;
-		heap.set(imgData.data, ptr);
-		function_to_call(ptr, img.width, img.height);
-	  } catch (err) {
-		console.error("Failed to upload sky texture:", err);
-	  }
-	};
-	img.onerror = () => {
-	  console.warn(`Failed to load ${texturePath}`);
-	};
+		const tctx = tmp.getContext("2d");
+		tctx.drawImage(img, 0, 0);
+  
+		const imgData = tctx.getImageData(0, 0, img.width, img.height);
+		const size = imgData.data.length;
+		const ptr = Module._malloc(size);
+  
+		try {
+		  const heap = Module.HEAPU8 || HEAPU8;
+		  heap.set(imgData.data, ptr);
+		  functionToCall(ptr, img.width, img.height);
+		  resolve();
+		} catch (err) {
+		  reject(err);
+		}
+	  };
+  
+	  img.onerror = () => reject(new Error(`Failed to load ${texturePath}`));
+	});
   }
-  
-function start() {
+
+
+
+async function start() {
   console.log("WASM ready");
 
   loadSound("assets/jump.m4a", "jump");
@@ -154,6 +170,7 @@ function start() {
 
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d", { alpha: false });
+  const loadingEl = document.getElementById("loading");
   const scoreEl = document.getElementById("score");
   const gameOverEl = document.getElementById("game-over-screen");
   const highScoreEl = document.getElementById("high-score");
@@ -184,8 +201,8 @@ function start() {
   const getPlayerX = Module.cwrap("get_player_x", "number", []);
   const getPlayerY = Module.cwrap("get_player_y", "number", []);
   const getPlayerSize = Module.cwrap("get_player_size", "number", []);
-  const setPlayerTexture = Module.cwrap("set_player_texture", null, ["number", "number", "number"])
-  ;
+  const setPlayerTexture = Module.cwrap("set_player_texture", null, ["number", "number", "number"]);
+
   const setSkyTexture1 = Module.cwrap("set_sky_texture1", null, ["number", "number", "number"]);
   const setSkyTexture2 = Module.cwrap("set_sky_texture2", null, ["number", "number", "number"]);
   const setGroundTexture = Module.cwrap("set_ground_texture", null, ["number", "number", "number"]);
@@ -194,13 +211,28 @@ function start() {
   const setObstacleTexture = Module.cwrap("set_obstacle_texture", null, ["number", "number", "number"]);
   const setBonusTexture = Module.cwrap("set_bonus_texture", null, ["number", "number", "number"]);
 
-  loadTexture(playerTexturePath, setPlayerTexture);
-  loadTexture(skyTexture1Path, setSkyTexture1);
-  loadTexture(skyTexture2Path, setSkyTexture2);
-  loadTexture(groundTexturePath, setGroundTexture);
-  loadTexture(groundTexture2Path, setGroundTexture2);
-  loadTexture(obstacleTexturePath, setObstacleTexture);
-  loadTexture(bonusTexturePath, setBonusTexture);
+  console.log("Loading assets...");
+  if (loadingEl) {
+	loadingEl.style.display = "flex";
+  }
+  const assetPromises = [
+	loadTexture(playerTexturePath, setPlayerTexture),
+	loadTexture(skyTexture1Path, setSkyTexture1),
+	loadTexture(skyTexture2Path, setSkyTexture2),
+	loadTexture(groundTexturePath, setGroundTexture),
+	loadTexture(groundTexture2Path, setGroundTexture2),
+	loadTexture(obstacleTexturePath, setObstacleTexture),
+	loadTexture(bonusTexturePath, setBonusTexture),
+
+	loadSound("assets/jump.m4a", "jump"),
+	loadSound("assets/bite.m4a", "bonus"),
+	loadSound("assets/game-over.m4a", "gameOver"),
+  ];
+  await Promise.all(assetPromises);
+  console.log("Assets ready");
+  if (loadingEl) {
+	loadingEl.style.display = "none";
+  }
 
   let last = performance.now();
   let lastScore = null;
@@ -286,7 +318,7 @@ function start() {
 
 	if (speedValueEl) {
 	  const speed = getSpeed() + 1.0;
-	  speedValueEl.textContent = speed.toFixed(2);
+	  speedValueEl.textContent = speed.toFixed(0);
 	}
 
 	if (getBonusCollected() === 1) {
@@ -441,6 +473,9 @@ function start() {
 
   requestAnimationFrame(loop);
 }
+
+
+
 
 let lastTouchEnd = 0;
 
