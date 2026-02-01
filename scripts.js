@@ -1,10 +1,10 @@
 let skyTexture1Path = "assets/pixel-sky-1.webp";
 let skyTexture2Path = "assets/pixel-sky-2.webp";
-let groundTexturePath = "assets/ground.png";
-let obstacleTexturePath = "assets/obstacle.png";
-let bonusTexturePath = "assets/coin.png";
+let groundTexturePath = "assets/wolt-ground.webp";
+let obstacleTexturePath = "assets/wolt/paper_bag.png";
+let bonusTexturePath = "assets/wolt/cake.webp";
 
-let playerTexturePath = "assets/player-sprite.png";
+let playerTexturePath = "assets/wolt/deer-sprite2.png";
 
 // Define Module BEFORE loading demo.js
 var Module = {
@@ -16,7 +16,7 @@ var Module = {
 let skyTexture1 = null;
 let skyTexture2 = null;
 let skyTexture1Ready = false;
-let skyTexture2Ready = false;
+let skyTexture2Ready = false; 
 
 let playerTexture = null;
 let playerTextureReady = false;
@@ -99,6 +99,7 @@ function playGameOverSound() {
 }
 
 function loadTexture(texturePath, function_to_call) {
+	
 	const img = new Image();
 	img.src = texturePath;
 	img.onload = () => {
@@ -176,7 +177,7 @@ function start() {
 
   const resetGame = Module.cwrap("reset_game", null, []);
   const getGameScore = Module.cwrap("get_game_score", "number", []);
-  const getGameOver = Module.cwrap("get_game_over", "number", []);
+  const getGameStatus = Module.cwrap("get_game_status", "number", []);
   const getSpeed = Module.cwrap("get_speed", "number", []);
   
   const getBonusCollected = Module.cwrap("get_bonus_collected", "number", []);
@@ -203,7 +204,7 @@ function start() {
 
   let last = performance.now();
   let lastScore = null;
-  let lastGameOver = null;
+  let lastGameStatus = null;
   let highScore = 0;
 
   // keys that are pressed right now
@@ -264,13 +265,26 @@ function start() {
 		highScoreEl.textContent = String(highScore);
 	  }
 	}
+
 	if (gameOverEl) {
-	  const isGameOver = getGameOver() === 1;
-	  if (isGameOver !== lastGameOver) {
-		gameOverEl.style.display = isGameOver ? "block" : "none";
-		lastGameOver = isGameOver;
+		const status = getGameStatus();
+
+		if (status !== lastGameStatus) {
+		  if (status === 2) {
+			gameOverEl.style.display = "block";
+			gameOverEl.textContent = "GAME WON";
+		  } 
+		  else if (status === -1) {
+			gameOverEl.style.display = "block";
+			gameOverEl.textContent = "GAME OVER";
+		  } 
+		  else {
+			gameOverEl.style.display = "none";
+		  }
+		
+		  lastGameStatus = status;
+		}
 	  }
-	}
 
 	if (speedValueEl) {
 	  const speed = getSpeed() + 1.0;

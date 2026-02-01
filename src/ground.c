@@ -28,3 +28,14 @@ void draw_ground(uint32_t *framebuffer, float dt)
     render_layer(ground_pixels, ground_w, ground_h, ground_scroll_x, GROUND_LEVEL_Y, framebuffer);
     render_layer(ground_pixels, ground_w, ground_h, ground_w + ground_scroll_x, GROUND_LEVEL_Y, framebuffer);
 }
+
+void draw_ground2(uint32_t *framebuffer, float dt)
+{
+    ground_scroll_x += dt * -25;
+
+    if (ground_scroll_x <= -ground_w)
+        ground_scroll_x += ground_w;
+
+    render_layer(ground_pixels, ground_w, ground_h, ground_scroll_x, GROUND_LEVEL_Y + 20, framebuffer);
+    render_layer(ground_pixels, ground_w, ground_h, ground_w + ground_scroll_x, GROUND_LEVEL_Y + 20, framebuffer);
+}

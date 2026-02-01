@@ -66,12 +66,6 @@ canvas {
 	border-radius: 6px;
 	background: rgba(0, 0, 0, 0.0);
 	pointer-events: none;
-		/* fake stroke */
-			text-shadow:
-			-6px -6px 0 #000,
-			6px -6px 0 #000,
-			-6px  6px 0 #000,
-			6px  6px 0 #000;
 }
 
 #high-scoreboard {
@@ -124,11 +118,6 @@ canvas {
 	background: rgba(0, 0, 0, 0.0);
 	pointer-events: none;
 	display: none;
-	text-shadow:
-	-6px -6px 0 #000,
-	 6px -6px 0 #000,
-	-6px  6px 0 #000,
-	 6px  6px 0 #000;
 }
 
 .instructions {

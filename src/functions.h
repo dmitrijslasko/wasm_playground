@@ -10,5 +10,6 @@ void draw_sky2(uint32_t *framebuffer, float dt);
 
 void set_ground_texture(uint8_t *pixels, int w, int h);
 void draw_ground(uint32_t *framebuffer, float dt);
+void draw_ground2(uint32_t *framebuffer, float dt);
 
 #endif
