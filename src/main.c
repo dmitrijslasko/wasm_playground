@@ -416,6 +416,7 @@ void game_step(float dt)
 		update_bonus_collisions();
 
 	draw_player(0, 0, player_size);
+	draw_ground2(framebuffer, dt);
 }
 
 EMSCRIPTEN_KEEPALIVE

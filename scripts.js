@@ -1,6 +1,7 @@
 let skyTexture1Path = "assets/wolt/bg/sky.png";
 let skyTexture2Path = "assets/wolt/bg/clouds.png";
 let groundTexturePath = "assets/wolt/bg/ground.png";
+let groundTexture2Path = "assets/wolt/bg/bushes.png";
 let obstacleTexturePath = "assets/wolt/paper_bag.png";
 let bonusTexturePath = "assets/wolt/cake.png";
 
@@ -179,13 +180,17 @@ function start() {
   const getBonusCollected = Module.cwrap("get_bonus_collected", "number", []);
   const getJumpTriggered = Module.cwrap("get_jump_triggered", "number", []);
   const getGameOverTriggered = Module.cwrap("get_game_over_triggered", "number", []);
+
   const getPlayerX = Module.cwrap("get_player_x", "number", []);
   const getPlayerY = Module.cwrap("get_player_y", "number", []);
   const getPlayerSize = Module.cwrap("get_player_size", "number", []);
-  const setPlayerTexture = Module.cwrap("set_player_texture", null, ["number", "number", "number"]);
+  const setPlayerTexture = Module.cwrap("set_player_texture", null, ["number", "number", "number"])
+  ;
   const setSkyTexture1 = Module.cwrap("set_sky_texture1", null, ["number", "number", "number"]);
   const setSkyTexture2 = Module.cwrap("set_sky_texture2", null, ["number", "number", "number"]);
   const setGroundTexture = Module.cwrap("set_ground_texture", null, ["number", "number", "number"]);
+  const setGroundTexture2 = Module.cwrap("set_ground_texture2", null, ["number", "number", "number"]);
+
   const setObstacleTexture = Module.cwrap("set_obstacle_texture", null, ["number", "number", "number"]);
   const setBonusTexture = Module.cwrap("set_bonus_texture", null, ["number", "number", "number"]);
 
@@ -193,6 +198,7 @@ function start() {
   loadTexture(skyTexture1Path, setSkyTexture1);
   loadTexture(skyTexture2Path, setSkyTexture2);
   loadTexture(groundTexturePath, setGroundTexture);
+  loadTexture(groundTexture2Path, setGroundTexture2);
   loadTexture(obstacleTexturePath, setObstacleTexture);
   loadTexture(bonusTexturePath, setBonusTexture);
 
