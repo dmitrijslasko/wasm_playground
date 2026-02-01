@@ -40,10 +40,6 @@ static float player_vel_y = 0.0f;
 static char* obstacle_course = "102010010100010100010001000100101010010101001010010100000100100100100000100100101010101010101101010100010101010101000101000101010100010101";
 static char* bonus_course =    "123410101221032011002100012000010103201001010010043101010001010000010014001020210100100010021103010200401010100010100010001000000101010043";
 
-// static char* obstacle_course = "101001002";
-// static char* bonus_course =    "123410101221032011002100012000010103201001010010013101010001010000010014001010010100100010021103010200401010100010100010001000000101010011";
-
-
 static char* bonus_course_copy = NULL;
 
 static uint8_t *obstacle_pixels = NULL;
@@ -163,8 +159,8 @@ void update_obstacle_collisions(void) {
 
 	while (*p && ox < FRAMEBUFFER_WIDTH) {
 		if (*p >= '1') {
-			if (aabb_overlap(player_pos_x, player_pos_y, player_size, player_size,
-							 ox, OBSTACLE_Y_GROUND_POSITION,
+			if (aabb_overlap(player_pos_x + 120, player_pos_y - player_size, player_size - 220, player_size,
+							 ox, OBSTACLE_Y_GROUND_POSITION - OBSTACLE_BASE_SIZE + 50,
 							 OBSTACLE_BASE_SIZE, OBSTACLE_BASE_SIZE)) 
 								{
 				game_state = GAME_OVER;
@@ -186,9 +182,9 @@ void update_bonus_collisions(void) {
 
 	while (*p && ox < FRAMEBUFFER_WIDTH) {
 		if (*p >= '1') {
-			if (aabb_overlap(player_pos_x, 
-								player_pos_y-player_size, 
-								player_size, 
+			if (aabb_overlap(player_pos_x + 100, 
+								player_pos_y - player_size, 
+								player_size - 200, 
 								player_size,
 							 	ox, 
 								get_bonus_y_position(p),

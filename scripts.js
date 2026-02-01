@@ -10,7 +10,7 @@ let bonusTexturePath = "assets/wolt/cake.webp";
 let playerTexturePath = "assets/wolt/deer-sprite.webp";
 
 let jumpSoundPath = "assets/sounds/jump.m4a";
-let bonusSoundPath = "assets/sounds/bite.m4a";
+let bonusSoundPath = "assets/sounds/pickup.m4a";
 let gameOverSoundPath = "assets/sounds/game-over.m4a";
 
 let joystickSensitivy = 200;
