@@ -1,11 +1,17 @@
-let skyTexture1Path = "assets/wolt/bg/sky.png";
-let skyTexture2Path = "assets/wolt/bg/clouds.png";
-let groundTexturePath = "assets/wolt/bg/ground.webp";
-let groundTexture2Path = "assets/wolt/bg/bushes.webp";
-let obstacleTexturePath = "assets/wolt/paper_bag.png";
-let bonusTexturePath = "assets/wolt/cake.png";
+let skyTexture1Path = "assets/wolt/sky.png";
+let skyTexture2Path = "assets/wolt/skyline.png";
+let skyTexture3Path = "assets/wolt/clouds.png";
 
-let playerTexturePath = "assets/wolt/bg/deer-sprite.webp";
+let groundTexturePath = "assets/wolt/ground.webp";
+let groundTexture2Path = "assets/wolt/bushes.webp";
+let obstacleTexturePath = "assets/wolt/paper_bag.webp";
+let bonusTexturePath = "assets/wolt/cake.webp";
+
+let playerTexturePath = "assets/wolt/deer-sprite.webp";
+
+let jumpSoundPath = "assets/sounds/jump.m4a";
+let bonusSoundPath = "assets/sounds/bite.m4a";
+let gameOverSoundPath = "assets/sounds/game-over.m4a";
 
 let joystickSensitivy = 200;
 
@@ -148,9 +154,9 @@ function loadTexture(texturePath, functionToCall) {
 async function start() {
   console.log("WASM ready");
 
-  loadSound("assets/jump.m4a", "jump");
-  loadSound("assets/bite.m4a", "bonus");
-  loadSound("assets/game-over.m4a", "gameOver");
+  loadSound(jumpSoundPath, "jump");
+  loadSound(bonusSoundPath, "bonus");
+  loadSound(gameOverSoundPath, "gameOver");
 
   const enableAudio = () => initAudio();
   const unlockAudio = () => {
@@ -205,6 +211,8 @@ async function start() {
 
   const setSkyTexture1 = Module.cwrap("set_sky_texture1", null, ["number", "number", "number"]);
   const setSkyTexture2 = Module.cwrap("set_sky_texture2", null, ["number", "number", "number"]);
+  const setSkyTexture3 = Module.cwrap("set_sky_texture3", null, ["number", "number", "number"]);
+
   const setGroundTexture = Module.cwrap("set_ground_texture", null, ["number", "number", "number"]);
   const setGroundTexture2 = Module.cwrap("set_ground_texture2", null, ["number", "number", "number"]);
 
@@ -219,6 +227,7 @@ async function start() {
 	loadTexture(playerTexturePath, setPlayerTexture),
 	loadTexture(skyTexture1Path, setSkyTexture1),
 	loadTexture(skyTexture2Path, setSkyTexture2),
+	loadTexture(skyTexture3Path, setSkyTexture3),
 	loadTexture(groundTexturePath, setGroundTexture),
 	loadTexture(groundTexture2Path, setGroundTexture2),
 	loadTexture(obstacleTexturePath, setObstacleTexture),

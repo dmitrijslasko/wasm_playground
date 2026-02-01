@@ -407,13 +407,14 @@ void game_step(float dt)
 
 	draw_sky1(framebuffer, dt);
 	draw_sky2(framebuffer, dt);
+	draw_sky3(framebuffer, dt);
 	
 	draw_ground(framebuffer, dt);
 	
 	// render the obstacle course 
 	render_obstacle_course();
-	// if (game_state == GAME_ACTIVE)
-	//     update_obstacle_collisions();
+	if (game_state == GAME_ACTIVE)
+	    update_obstacle_collisions();
 	
 	// render the bonus course
 	render_bonus_course();
