@@ -187,12 +187,17 @@ void update_bonus_collisions(void) {
 	while (*p && ox < FRAMEBUFFER_WIDTH) {
 		if (*p >= '1') {
 			if (aabb_overlap(player_pos_x, 
-							player_pos_y, player_size, player_size,
-							 ox, get_bonus_y_position(p),
-							 BONUS_BASE_SIZE, BONUS_BASE_SIZE)) {
+								player_pos_y-player_size, 
+								player_size, 
+								player_size,
+							 	ox, 
+								get_bonus_y_position(p),
+							 	BONUS_BASE_SIZE, 
+								BONUS_BASE_SIZE)) {
 				game_score += 1.0f;
-				*p = '0';
+
 				bonus_collected = 1;
+				*p = '0';
 				}
 			}
 		ox += BONUS_COURSE_BASE_WIDTH;
@@ -416,6 +421,7 @@ void game_step(float dt)
 		update_bonus_collisions();
 
 	draw_player(0, 0, player_size);
+	
 	draw_ground2(framebuffer, dt);
 }
 
