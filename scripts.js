@@ -1,10 +1,12 @@
-let skyTexture1Path = "assets/pixel-sky-1.webp";
-let skyTexture2Path = "assets/pixel-sky-2.webp";
-let groundTexturePath = "assets/wolt-ground.webp";
+let skyTexture1Path = "assets/wolt/bg/sky.png";
+let skyTexture2Path = "assets/wolt/bg/clouds.png";
+let groundTexturePath = "assets/wolt/bg/ground.png";
 let obstacleTexturePath = "assets/wolt/paper_bag.png";
-let bonusTexturePath = "assets/wolt/cake.webp";
+let bonusTexturePath = "assets/wolt/cake.png";
 
 let playerTexturePath = "assets/wolt/deer-sprite2.png";
+
+let joystickSensitivy = 200;
 
 // Define Module BEFORE loading demo.js
 var Module = {
@@ -155,42 +157,34 @@ function start() {
   const gameOverEl = document.getElementById("game-over-screen");
   const highScoreEl = document.getElementById("high-score");
   const speedValueEl = document.getElementById("speed-value");
-  // MUST match canvas width/height
+
   const W = canvas.width;
   const H = canvas.height;
 
   const img = ctx.createImageData(W, H);
 
+  // functions to call from the WASM module
   const gameStep = Module.cwrap("game_step", null, ["number"]);
   const getFramebuffer = Module.cwrap("get_framebuffer", "number");
-
   const setColor = Module.cwrap("set_color", null, ["number", "number", "number", "number"]);
   const growRect = Module.cwrap("grow_rect", null, []);
   const shrinkRect = Module.cwrap("shrink_rect", null, []);
-
   const moveRect = Module.cwrap("move_rect", null, ["number", "number"]);
-
-
   const playerIsUp = Module.cwrap("player_up", null, []);
   const playerIsDown = Module.cwrap("player_down", null, []);
-
-
   const resetGame = Module.cwrap("reset_game", null, []);
   const getGameScore = Module.cwrap("get_game_score", "number", []);
   const getGameStatus = Module.cwrap("get_game_status", "number", []);
   const getSpeed = Module.cwrap("get_speed", "number", []);
-  
   const getBonusCollected = Module.cwrap("get_bonus_collected", "number", []);
   const getJumpTriggered = Module.cwrap("get_jump_triggered", "number", []);
   const getGameOverTriggered = Module.cwrap("get_game_over_triggered", "number", []);
   const getPlayerX = Module.cwrap("get_player_x", "number", []);
   const getPlayerY = Module.cwrap("get_player_y", "number", []);
   const getPlayerSize = Module.cwrap("get_player_size", "number", []);
-
   const setPlayerTexture = Module.cwrap("set_player_texture", null, ["number", "number", "number"]);
   const setSkyTexture1 = Module.cwrap("set_sky_texture1", null, ["number", "number", "number"]);
   const setSkyTexture2 = Module.cwrap("set_sky_texture2", null, ["number", "number", "number"]);
-
   const setGroundTexture = Module.cwrap("set_ground_texture", null, ["number", "number", "number"]);
   const setObstacleTexture = Module.cwrap("set_obstacle_texture", null, ["number", "number", "number"]);
   const setBonusTexture = Module.cwrap("set_bonus_texture", null, ["number", "number", "number"]);
@@ -218,15 +212,13 @@ function start() {
 	if (dt > 0.05) dt = 0.05;
 
 	// this is the step size for the movement of the rect
-  const step = 200 * dt;
+  const step = joystickSensitivy * dt;
   if (joyX !== 0 || joyY !== 0) {
 	moveRect(joyX * step, joyY * step);
   }
 
 	if (keys.has("ArrowLeft")) moveRect(-step, 0);
 	if (keys.has("ArrowRight")) moveRect(step, 0);
-	// if (keys.has("ArrowUp")) moveRect(0, -step);
-	// if (keys.has("ArrowDown")) moveRect(0, step);
 
 	if (keys.has("ArrowUp")) playerIsUp();
 	if (keys.has("ArrowDown")) playerIsDown();

@@ -20,7 +20,7 @@ void set_ground_texture(uint8_t *pixels, int w, int h)
 
 void draw_ground(uint32_t *framebuffer, float dt)
 {
-    ground_scroll_x += dt * -25;
+    ground_scroll_x += dt * -50;
 
     if (ground_scroll_x <= -ground_w)
         ground_scroll_x += ground_w;

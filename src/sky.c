@@ -48,7 +48,7 @@ void draw_sky1(uint32_t *framebuffer, float dt)
 EMSCRIPTEN_KEEPALIVE
 void draw_sky2(uint32_t *framebuffer, float dt)
 {
-    sky2_scroll_x += dt * -15;
+    sky2_scroll_x += dt * -150;
 
     if (sky2_scroll_x <= -sky2_w)
         sky2_scroll_x += sky2_w;

@@ -1,6 +1,7 @@
 SRC = src/main.c \
 		src/sky.c \
-		src/ground.c
+		src/ground.c \
+		src/bonuses.c
 		
 all:
 	emcc $(SRC) \

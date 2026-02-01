@@ -12,4 +12,6 @@ void set_ground_texture(uint8_t *pixels, int w, int h);
 void draw_ground(uint32_t *framebuffer, float dt);
 void draw_ground2(uint32_t *framebuffer, float dt);
 
+int get_bonus_y_position(char *p);
+
 #endif
